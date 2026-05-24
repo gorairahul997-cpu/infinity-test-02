@@ -1,0 +1,449 @@
+/* ═══════════════════════════════════════════════
+   INFINITY PRACTICE — Settings Hub Styles
+   Layout: Split-pane navigation & Premium Glassmorphic details
+   ═══════════════════════════════════════════════ */
+
+/* ── Container Layout ── */
+.settings-hub-container {
+  display: flex;
+  gap: 2rem;
+  height: calc(100vh - 12rem);
+  min-height: 550px;
+  position: relative;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+/* ── Left Category Navigation ── */
+.settings-sub-nav {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding-right: 1.5rem;
+  overflow-y: auto;
+}
+
+.settings-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-nav-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  transform: translateX(4px);
+}
+
+.settings-nav-btn.active {
+  background: var(--primary-glow);
+  color: var(--primary);
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.04);
+}
+
+.settings-nav-btn .nav-btn-icon {
+  font-size: 1.2rem;
+}
+
+/* ── Right Content Area ── */
+.settings-hub-content {
+  flex: 1;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ── Sub-panels ── */
+.settings-sub-panel {
+  display: none;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 0.75rem;
+  padding-bottom: 2rem;
+  animation: fadeSettingsPanel 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.settings-sub-panel.active-sub-panel {
+  display: block;
+}
+
+@keyframes fadeSettingsPanel {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Premium Glassmorphic Cards ── */
+.settings-sub-panel .card {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.05),
+              inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.settings-sub-panel .card:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08),
+              0 0 16px rgba(99, 102, 241, 0.04),
+              inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Custom border highlight class */
+.settings-sub-panel .card.premium-glow-card {
+  border-left: 4px solid var(--primary);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(99, 102, 241, 0.02) 100%);
+}
+
+.settings-sub-panel .card.danger-glow-card {
+  border-left: 4px solid var(--red);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(239, 68, 68, 0.01) 100%);
+}
+
+/* Card layout elements */
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.settings-card-title {
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.settings-card-desc {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Custom High-Tech Toggles ── */
+.settings-toggle-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-toggle-group .toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-toggle-group .toggle-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.settings-toggle-group .toggle-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-toggle-group .toggle-desc {
+  font-size: 0.78rem;
+  font-weight: 450;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+/* Interactive custom switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 26px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-muted);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+input:checked + .slider {
+  background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.4);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* ── Interactive Textarea & Fields ── */
+.settings-textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(4px);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  resize: vertical;
+  outline: none;
+}
+
+.settings-textarea:focus {
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.15),
+              inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Cache Diagnostic Custom Styles ── */
+.cache-warmth-badge {
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--primary-glow);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: var(--primary);
+}
+
+.cache-status-indicator {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cache-subj-card {
+  backdrop-filter: blur(8px);
+}
+
+/* ── Danger actions ── */
+.btn-danger {
+  padding: 0.7rem 1.5rem;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1.5px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.05);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+}
+
+/* ── Guidebook Panel Adjustments ── */
+#settings-panel-guidebook {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+
+#settings-panel-guidebook.active-sub-panel {
+  display: flex;
+}
+
+#settings-panel-guidebook .guidebook-layout {
+  height: calc(100% - 6rem);
+  min-height: 450px;
+  margin-top: 1rem;
+}
+
+#settings-panel-guidebook .guidebook-sidebar {
+  border-right: 1px solid var(--border);
+}
+
+#settings-panel-guidebook .page-header {
+  margin-bottom: 0.5rem;
+}
+
+/* Dark Mode Overrides for Transparency & Colors */
+[data-theme="dark"] .settings-sub-panel .card {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .settings-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .settings-toggle-group .toggle-row {
+  border-bottom-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Zen Light Mode Overrides */
+html:not([data-theme="dark"]) .settings-sub-panel .card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.02),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html:not([data-theme="dark"]) .settings-sub-panel .card:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.04),
+              0 0 16px rgba(99, 102, 241, 0.03);
+}
+
+html:not([data-theme="dark"]) .settings-textarea {
+  background: rgba(0, 0, 0, 0.01);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+html:not([data-theme="dark"]) .settings-textarea:focus {
+  background: #fff;
+  border-color: var(--primary);
+}
+
+html:not([data-theme="dark"]) .slider {
+  background-color: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+html:not([data-theme="dark"]) .slider:before {
+  background-color: #64748b;
+}
+
+html:not([data-theme="dark"]) input:checked + .slider {
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+html:not([data-theme="dark"]) input:checked + .slider:before {
+  background-color: #fff;
+}
+
+html:not([data-theme="dark"]) .btn-danger {
+  background: #fff5f5;
+  border-color: #feb2b2;
+  color: #e53e3e;
+}
+
+html:not([data-theme="dark"]) .btn-danger:hover {
+  background: #fff0f0;
+  color: #c53030;
+  border-color: #fc8181;
+}
+
+/* ── Mobile Layout Media Queries ── */
+@media (max-width: 768px) {
+  .settings-hub-container {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .settings-sub-nav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding-right: 0;
+    padding-bottom: 0.85rem;
+    flex-direction: row;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .settings-nav-btn {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .settings-nav-btn:hover {
+    transform: none;
+  }
+
+  .settings-hub-content {
+    overflow-y: visible;
+  }
+
+  .settings-sub-panel {
+    overflow-y: visible;
+    padding-right: 0;
+  }
+
+  #settings-panel-guidebook .guidebook-layout {
+    height: auto;
+    min-height: auto;
+  }
+}

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF Paper | Infinity Practice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app-shell.css" />
+  <link rel="stylesheet" href="css/paper.css" />
+  <!-- KaTeX for blazing fast equation rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    (function () {
+      function patchKatex() {
+        if (!window.katex) return;
+        const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+        const useKatex = prefs.useKatex !== false;
+
+        // Save original functions if not already done
+        if (!window.__orig_renderMathInElement && window.renderMathInElement) {
+          window.__orig_renderMathInElement = window.renderMathInElement;
+        }
+        if (window.katex && !window.katex.__orig_renderToString && window.katex.renderToString) {
+          window.katex.__orig_renderToString = window.katex.renderToString;
+        }
+
+        // Monkeypatch renderMathInElement
+        window.renderMathInElement = function (element, options) {
+          const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+          if (currentPrefs.useKatex === false) return; // Do nothing if disabled
+
+          const opt = options || {};
+          opt.throwOnError = false;
+          opt.errorColor = 'currentColor'; // Hide red error markup
+          
+          try {
+            if (window.__orig_renderMathInElement) {
+              window.__orig_renderMathInElement(element, opt);
+            }
+          } catch (e) {
+            console.warn('Intercepted renderMathInElement error:', e);
+          }
+        };
+
+        // Monkeypatch katex.renderToString
+        if (window.katex) {
+          window.katex.renderToString = function (tex, options) {
+            const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+            const opt = options || {};
+            if (currentPrefs.useKatex === false) {
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            
+            // Force throwOnError = true so we can catch any parsing/syntax errors.
+            const forceThrowOpt = { ...opt, throwOnError: true };
+            
+            try {
+              if (window.katex.__orig_renderToString) {
+                return window.katex.__orig_renderToString(tex, forceThrowOpt);
+              }
+            } catch (e) {
+              console.warn('Intercepted renderToString error:', e, 'for formula:', tex);
+              if (opt.throwOnError === true) {
+                throw e; // Propagate if the caller explicitly requested it
+              }
+              // Escape math text to prevent HTML injection and return raw math in current text color
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            return tex;
+          };
+        }
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', patchKatex);
+      } else {
+        patchKatex();
+      }
+    })();
+  </script>
+  <!-- ⚡ Blocking: apply theme + performance mode BEFORE first paint -->
+  <script>
+    (function () {
+      const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+      const isLowEnd = (navigator.hardwareConcurrency || 4) <= 2;
+      if (prefs.performanceMode || isLowEnd) {
+        document.documentElement.classList.add('low-end');
+      }
+      if (localStorage.getItem('infinityTheme') === 'dark')
+        document.documentElement.setAttribute('data-theme', 'dark');
+    })();
+  </script>
+</head>
+<body class="app-body paper-page page-entry">
+
+<div class="app-layout">
+
+  <!-- ══ Sidebar Nav ═══════════════════════════════════════════ -->
+  <nav class="app-nav">
+    <div class="nav-brand">
+      <span class="brand-icon">∞</span>
+      <span class="brand-text">Infinity</span>
+    </div>
+
+    <div class="nav-menu">
+      <a href="index.html" class="nav-item">
+        <span class="nav-icon">🚀</span>
+        <span class="nav-label">Practice</span>
+      </a>
+      <a href="index.html?tab=pdf" class="nav-item active">
+        <span class="nav-icon">📄</span>
+        <span class="nav-label">PDF Studio</span>
+      </a>
+      <a href="index.html?tab=history" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">History</span>
+      </a>
+      <a href="index.html?tab=formulas" class="nav-item">
+        <span class="nav-icon">📐</span>
+        <span class="nav-label">Formula Engine</span>
+      </a>
+      <a href="index.html?tab=settings" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </div>
+
+    <div class="nav-status">
+      <span class="status-dot online"></span>
+      <span>AI Ready</span>
+    </div>
+  </nav>
+
+  <!-- ══ Main Content ══════════════════════════════════════ -->
+  <main class="app-main">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <div class="m-brand">∞ Infinity</div>
+      <div><span class="status-dot online"></span></div>
+    </header>
+
+    <div class="scroll-area">
+
+      <!-- Page Header -->
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <h1 class="page-title">📄 Question Paper</h1>
+          <p class="page-subtitle">Preview and download your generated document.</p>
+        </div>
+        <div class="paper-actions" style="display:flex; gap:0.5rem;">
+          <button class="action-btn" id="dl-questions-btn" onclick="downloadPDF('questions')">
+            <span class="dl-icon">⬇️</span> Download Questions
+          </button>
+          <button class="action-btn answer-btn" id="dl-answers-btn" onclick="downloadPDF('answers')">
+            <span class="dl-icon">⬇️</span> Download Answer Key
+          </button>
+        </div>
+      </div>
+
+      <div class="paper-main-content" style="max-width: 900px; margin: 0 auto; display:flex; flex-direction:column; gap:1.5rem;">
+        <!-- Toggle -->
+  <div class="paper-toggle">
+    <button class="toggle-btn active" id="toggle-q" onclick="showView('questions')">📝 Question Paper</button>
+    <button class="toggle-btn" id="toggle-a" onclick="showView('answers')">✅ Answer Key</button>
+  </div>
+
+  <!-- Question Paper Preview -->
+  <div class="paper-preview" id="paper-preview">
+    <div class="paper-sheet" id="question-paper">
+      <div class="sheet-header">
+        <h2 class="sheet-title" id="sheet-title">Loading...</h2>
+        <div class="sheet-meta" id="sheet-meta"></div>
+        <div class="sheet-instructions">
+          <strong>General Instructions:</strong>
+          <ol>
+            <li>All questions are compulsory.</li>
+            <li>Read each question carefully before answering.</li>
+            <li>For MCQ, circle the correct option (A/B/C/D).</li>
+            <li>For numerical, show your working and write the final answer clearly.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="sheet-body" id="sheet-body"></div>
+      <div class="sheet-footer">
+        <p>— End of Question Paper —</p>
+        <p class="sheet-credit">Generated by Infinity Practice · AI-Powered Exam Prep</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Answer Key Preview -->
+  <div class="paper-preview" id="answer-preview" style="display:none;">
+    <div class="paper-sheet" id="answer-paper">
+      <div class="sheet-header">
+        <h2 class="sheet-title" id="answer-title">Answer Key</h2>
+        <div class="sheet-meta" id="answer-meta"></div>
+      </div>
+      <div class="sheet-body" id="answer-body"></div>
+      <div class="sheet-footer">
+        <p>— End of Answer Key —</p>
+        <p class="sheet-credit">Generated by Infinity Practice · AI-Powered Exam Prep</p>
+      </div>
+    </div>
+  </div>
+
+      </div><!-- end paper-main-content -->
+
+      <!-- Download/print status -->
+      <div class="download-status hidden" id="download-status">
+        <div class="ds-spinner"></div>
+        <span id="ds-text">Preparing for print...</span>
+      </div>
+
+    </div><!-- end scroll-area -->
+
+    <!-- Build loading overlay (shown until paper renders) -->
+    <div id="paper-build-overlay" style="
+      position:fixed; inset:0; background:var(--bg);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      z-index:200; gap:1rem; font-family:'Outfit',sans-serif;
+    ">
+      <div style="width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin-paper 0.8s linear infinite;"></div>
+      <p style="font-size:1rem;font-weight:700;color:var(--text);">Building your paper…</p>
+      <p style="font-size:0.82rem;color:var(--text-muted);">Rendering equations with KaTeX</p>
+    </div>
+    <style>@keyframes spin-paper{to{transform:rotate(360deg)}}</style>
+  </main>
+</div><!-- end app-layout -->
+
+<script src="js/paper.js"></script>
+<script>
+  (function () {
+    const isLowEnd = document.documentElement.classList.contains('low-end');
+
+    /* ── Page entrance animation ── */
+    if (!isLowEnd) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          document.body.classList.add('page-loaded');
+        });
+      });
+    } else {
+      document.body.classList.add('page-loaded');
+    }
+
+    /* ── Page exit animation on nav clicks ── */
+    document.querySelectorAll('.nav-item').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        const href = link.getAttribute('href');
+        if (!href || href === '#' || href === 'paper.html') return;
+        if (isLowEnd) return;
+
+        e.preventDefault();
+        document.body.classList.remove('page-loaded');
+        setTimeout(function () { window.location.href = href; }, 220);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

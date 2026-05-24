@@ -1,0 +1,227 @@
+/* paper.css — PDF Paper styles */
+
+.paper-actions { display: flex; gap: 0.5rem; }
+
+.action-btn {
+  background: rgba(139,92,246,0.15);
+  border: 1px solid rgba(139,92,246,0.3);
+  color: var(--purple-light);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.action-btn:hover { background: rgba(139,92,246,0.25); transform: translateY(-1px); }
+.action-btn.answer-btn { background: rgba(34,211,238,0.1); border-color: rgba(34,211,238,0.3); color: var(--cyan); }
+
+/* ── Toggle ─────────────────────────────────── */
+.paper-toggle {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.toggle-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-muted);
+  padding: 0.5rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle-btn.active {
+  background: rgba(139,92,246,0.2);
+  border-color: rgba(139,92,246,0.5);
+  color: var(--purple-light);
+}
+
+/* ── Paper Sheet ────────────────────────────── */
+.paper-sheet {
+  background: #fff;
+  color: #111;
+  border-radius: 12px;
+  padding: 2.5rem;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  line-height: 1.6;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+.sheet-header {
+  text-align: center;
+  border-bottom: 2px solid #333;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sheet-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 0.5rem;
+}
+
+.sheet-meta {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: #555;
+  flex-wrap: wrap;
+}
+
+.sheet-instructions {
+  text-align: left;
+  font-size: 0.8rem;
+  color: #444;
+  margin-top: 1rem;
+  background: #f8f8f8;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  border-left: 3px solid #333;
+}
+.sheet-instructions ol {
+  padding-left: 1.2rem;
+  margin: 0.3rem 0 0;
+}
+.sheet-instructions li { margin-bottom: 0.15rem; }
+
+/* ── Questions ──────────────────────────────── */
+.paper-question {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e5e5;
+  page-break-inside: avoid;
+}
+
+.pq-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pq-num { font-weight: 700; font-size: 1rem; color: #111; }
+.pq-type { font-size: 0.7rem; color: #666; background: #f0f0f0; padding: 0.15rem 0.5rem; border-radius: 4px; }
+.pq-topic { font-size: 0.72rem; color: #888; margin-left: auto; font-style: italic; }
+
+.pq-text { font-size: 0.95rem; color: #222; margin-bottom: 0.5rem; }
+
+.pq-assertion, .pq-reason { font-size: 0.9rem; margin-bottom: 0.4rem; color: #222; }
+
+.pq-given {
+  font-size: 0.85rem;
+  color: #444;
+  background: #f9f9f9;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.pq-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.pq-opt {
+  font-size: 0.88rem;
+  color: #333;
+  padding: 0.3rem 0;
+}
+
+.pq-answer-space {
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+.pq-answer-space.lines { margin-top: 0.5rem; }
+.pq-answer-space .line {
+  border-bottom: 1px dotted #bbb;
+  height: 1.5rem;
+  margin-bottom: 0.3rem;
+}
+
+/* ── Answer Key ─────────────────────────────── */
+.answer-item {
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #e5e5e5;
+  page-break-inside: avoid;
+}
+
+.ai-header { display: flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.3rem; }
+.ai-num { font-weight: 700; font-size: 0.95rem; color: #111; }
+.ai-answer { font-size: 0.9rem; color: #16a34a; }
+
+.ai-explanation {
+  font-size: 0.82rem;
+  color: #555;
+  margin-top: 0.3rem;
+  line-height: 1.5;
+}
+
+.ai-steps { font-size: 0.8rem; color: #444; margin-top: 0.3rem; }
+.ai-steps ol { padding-left: 1.2rem; }
+.ai-steps li { margin-bottom: 0.15rem; }
+
+.ai-keypoints { font-size: 0.78rem; color: #666; margin-top: 0.3rem; }
+
+/* ── Print Styles ───────────────────────────── */
+@media print {
+  body { background: #fff !important; }
+  .bg-orbs, .paper-header, .paper-toggle, .paper-actions, .download-status { display: none !important; }
+  .paper-main { padding: 0; max-width: 100%; }
+  .paper-preview { box-shadow: none; border: none; }
+  .glass-card { background: transparent !important; border: none !important; box-shadow: none !important; }
+  .paper-sheet { box-shadow: none; border-radius: 0; padding: 1rem; }
+  .paper-question { break-inside: avoid; }
+  .answer-item { break-inside: avoid; }
+}
+
+/* ── Download Status ────────────────────────── */
+.download-status {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: rgba(15, 15, 30, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--purple);
+  padding: 1rem 1.5rem;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.2);
+  z-index: 1000;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.download-status.hidden {
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+
+.ds-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#ds-text {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.9rem;
+}

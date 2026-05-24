@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Infinity Practice — AI-powered exam preparation platform">
+  <title>Infinity Practice | Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <!-- KaTeX for formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    (function () {
+      function patchKatex() {
+        if (!window.katex) return;
+        const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+        const useKatex = prefs.useKatex !== false;
+
+        // Save original functions if not already done
+        if (!window.__orig_renderMathInElement && window.renderMathInElement) {
+          window.__orig_renderMathInElement = window.renderMathInElement;
+        }
+        if (window.katex && !window.katex.__orig_renderToString && window.katex.renderToString) {
+          window.katex.__orig_renderToString = window.katex.renderToString;
+        }
+
+        // Monkeypatch renderMathInElement
+        window.renderMathInElement = function (element, options) {
+          const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+          if (currentPrefs.useKatex === false) return; // Do nothing if disabled
+
+          const opt = options || {};
+          opt.throwOnError = false;
+          opt.errorColor = 'currentColor'; // Hide red error markup
+          
+          try {
+            if (window.__orig_renderMathInElement) {
+              window.__orig_renderMathInElement(element, opt);
+            }
+          } catch (e) {
+            console.warn('Intercepted renderMathInElement error:', e);
+          }
+        };
+
+        // Monkeypatch katex.renderToString
+        if (window.katex) {
+          window.katex.renderToString = function (tex, options) {
+            const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+            const opt = options || {};
+            if (currentPrefs.useKatex === false) {
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            
+            // Force throwOnError = true so we can catch any parsing/syntax errors.
+            const forceThrowOpt = { ...opt, throwOnError: true };
+            
+            try {
+              if (window.katex.__orig_renderToString) {
+                return window.katex.__orig_renderToString(tex, forceThrowOpt);
+              }
+            } catch (e) {
+              console.warn('Intercepted renderToString error:', e, 'for formula:', tex);
+              if (opt.throwOnError === true) {
+                throw e; // Propagate if the caller explicitly requested it
+              }
+              // Escape math text to prevent HTML injection and return raw math in current text color
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            return tex;
+          };
+        }
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', patchKatex);
+      } else {
+        patchKatex();
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/app-shell.css">
+  <link rel="stylesheet" href="css/history.css">
+  <link rel="stylesheet" href="css/guidebook.css">
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+
+<body class="app-body">
+
+  <div class="app-layout">
+
+    <!-- ══ Sidebar Nav ═══════════════════════════════════════════ -->
+    <nav class="app-nav">
+      <div class="nav-brand">
+        <span class="brand-icon">∞</span>
+        <span class="brand-text">Infinity</span>
+      </div>
+
+      <div class="nav-menu">
+        <a href="#" class="nav-item active" id="nav-practice" onclick="switchTab('practice', this); return false;">
+          <span class="nav-icon">🚀</span>
+          <span class="nav-label">Practice</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-pdf" onclick="switchTab('pdf', this); return false;">
+          <span class="nav-icon">📄</span>
+          <span class="nav-label">PDF Studio</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-history" onclick="switchTab('history', this); return false;">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">History</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-formulas" onclick="switchTab('formulas', this); return false;">
+          <span class="nav-icon">📐</span>
+          <span class="nav-label">Formula Engine</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-settings" onclick="switchTab('settings', this); return false;" style="margin-top: auto;">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Settings &amp; Info</span>
+        </a>
+      </div>
+
+      <div class="nav-status">
+        <span class="status-dot online"></span>
+        <span>AI Ready</span>
+      </div>
+    </nav>
+
+    <!-- ══ Main Config Area ══════════════════════════════════════ -->
+    <main class="app-main">
+
+      <!-- Mobile Header -->
+      <header class="mobile-header">
+        <div class="m-brand">∞ Infinity</div>
+        <div><span class="status-dot online"></span></div>
+      </header>
+
+      <div class="scroll-area">
+
+        <!-- ── VIEW: DASHBOARD ── -->
+        <div id="tab-dashboard" class="view-panel active-panel">
+
+          <div class="page-header">
+            <h1 class="page-title" id="main-title">Live Practice</h1>
+            <p class="page-subtitle" id="main-subtitle">Configure the AI for your next interactive session.</p>
+          </div>
+
+          <div class="config-steps">
+
+            <!-- Step 1: Academic Profile -->
+            <div class="step-card" style="--delay: 0.04s">
+              <div class="step-header">
+                <span class="step-badge">01</span>
+                <h2 class="step-title">Academic Profile</h2>
+              </div>
+              <div class="step-body">
+                <div class="step-row">
+
+                  <div class="field-group">
+                    <label class="field-label">Select Class</label>
+                    <div class="class-grid">
+                      <button class="class-btn" id="cls-9" data-class="9" onclick="selectClass(this)"><span
+                          class="cn">9</span><span class="cl">Foundation</span></button>
+                      <button class="class-btn" id="cls-10" data-class="10" onclick="selectClass(this)"><span
+                          class="cn">10</span><span class="cl">Boards</span></button>
+                      <button class="class-btn" id="cls-11" data-class="11" onclick="selectClass(this)"><span
+                          class="cn">11</span><span class="cl">JEE/NEET</span></button>
+                      <button class="class-btn" id="cls-12" data-class="12" onclick="selectClass(this)"><span
+                          class="cn">12</span><span class="cl">Final Year</span></button>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <label class="field-label">Target Exam</label>
+                    <div class="pill-group" id="exam-group">
+                      <button class="pill-btn" data-value="JEE" onclick="selectPill(this,'exam-group')">JEE</button>
+                      <button class="pill-btn" data-value="NEET" onclick="selectPill(this,'exam-group')">NEET</button>
+                      <button class="pill-btn" data-value="CBSE" onclick="selectPill(this,'exam-group')">CBSE</button>
+                      <button class="pill-btn" data-value="State Board"
+                        onclick="selectPill(this,'exam-group')">State</button>
+                      <button class="pill-btn" data-value="General"
+                        onclick="selectPill(this,'exam-group')">General</button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Subject & Topic -->
+            <div class="step-card" style="--delay: 0.1s">
+              <div class="step-header">
+                <span class="step-badge">02</span>
+                <h2 class="step-title">Subject &amp; Topic</h2>
+              </div>
+              <div class="step-body">
+                <div class="step-row">
+
+                  <div class="field-group field-group--wide">
+                    <label class="field-label">Choose Subject</label>
+                    <div class="subj-grid">
+                      <button class="subj-btn" id="subj-physics" data-subject="Physics" onclick="selectSubject(this)">⚛️
+                        Physics</button>
+                      <button class="subj-btn" id="subj-chemistry" data-subject="Chemistry"
+                        onclick="selectSubject(this)">🧪 Chemistry</button>
+                      <button class="subj-btn" id="subj-maths" data-subject="Mathematics"
+                        onclick="selectSubject(this)">📐 Mathematics</button>
+                      <button class="subj-btn" id="subj-biology" data-subject="Biology" onclick="selectSubject(this)">🧬
+                        Biology</button>
+                      <button class="subj-btn" id="subj-cs" data-subject="Computer Science"
+                        onclick="selectSubject(this)">💻 Comp Sci</button>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <label class="field-label">Topic <span class="field-hint">(optional)</span></label>
+                    <input type="text" id="topic-input" class="text-input" placeholder="e.g. Kinematics, Algebra…">
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Format & Settings -->
+            <div class="step-card" style="--delay: 0.16s">
+              <div class="step-header">
+                <span class="step-badge">03</span>
+                <h2 class="step-title">Format &amp; Settings</h2>
+              </div>
+              <div class="step-body">
+                <div class="step-row">
+
+                  <div class="field-group field-group--wide">
+                    <label class="field-label">Question Format <span class="field-hint">Multi-select</span></label>
+                    <div class="fmt-grid" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));">
+                      <button class="fmt-btn" data-value="mcq" onclick="selectQType(this)">🔘 MCQ</button>
+                      <button class="fmt-btn" data-value="numerical" onclick="selectQType(this)">🔢 Numerical</button>
+                      <button class="fmt-btn" data-value="assertion" onclick="selectQType(this)">🔄 Assertion</button>
+                      <button class="fmt-btn" data-value="short" onclick="selectQType(this)">✍️ Short Ans</button>
+                      <button class="fmt-btn" data-value="fib" onclick="selectQType(this)">📝 Fill Blanks</button>
+                      <button class="fmt-btn" data-value="match" onclick="selectQType(this)">🔗 Match</button>
+                      <button class="fmt-btn" data-value="tf" onclick="selectQType(this)">✅ True/False</button>
+                      <button class="fmt-btn" id="btn-fmt-predict" data-value="predict" onclick="selectQType(this)"
+                        style="display: none;">👀 Predict</button>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <label class="field-label">Difficulty</label>
+                    <div class="pill-group" id="diff-group">
+                      <button class="pill-btn diff-adaptive active" data-value="Adaptive"
+                        onclick="selectPill(this,'diff-group')">🧠 Adaptive</button>
+                      <button class="pill-btn diff-easy" data-value="Easy"
+                        onclick="selectPill(this,'diff-group')">Easy</button>
+                      <button class="pill-btn diff-med" data-value="Medium"
+                        onclick="selectPill(this,'diff-group')">Medium</button>
+                      <button class="pill-btn diff-hard" data-value="Hard"
+                        onclick="selectPill(this,'diff-group')">Hard</button>
+                      <button class="pill-btn diff-mixed" data-value="Mixed"
+                        onclick="selectPill(this,'diff-group')">Mixed</button>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="step-row" style="margin-top: 1.25rem;">
+
+                  <div class="field-group">
+                    <label class="field-label">Questions: <span id="count-display" class="highlight">10</span></label>
+                    <input type="range" id="q-count" min="5" max="50" value="10" step="5" oninput="updateCount(this)">
+                  </div>
+
+                  <div id="fg-timer-container" class="collapsible-container">
+                    <div class="field-group" id="fg-timer">
+                      <label class="field-label">Timer per Question</label>
+                      <select id="timer-select" class="select-input">
+                        <option value="0">No Timer</option>
+                        <option value="30">30 seconds</option>
+                        <option value="60" selected>1 minute</option>
+                        <option value="120">2 minutes</option>
+                        <option value="180">3 minutes</option>
+                      </select>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+          </div><!-- end config-steps -->
+
+          <!-- Error message: shown inline below the steps -->
+          <div id="setup-error" class="error-msg hidden" style="margin-top:1rem;"></div>
+
+          <!-- Hidden stubs required by home.js validation -->
+          <div id="action-practice" class="hidden"><button id="start-btn" onclick="startPractice()"></button></div>
+          <div id="action-pdf" class="hidden"><button id="pdf-btn" onclick="generatePaper()"></button></div>
+
+        </div><!-- end tab-dashboard -->
+
+        <!-- ── VIEW: SETTINGS ── -->
+        <div id="tab-settings" class="view-panel hidden">
+          <div class="page-header">
+            <h1 class="page-title">Settings &amp; Info Hub</h1>
+            <p class="page-subtitle">Configure your preferences, manage AI caches, and explore the app guidebook.</p>
+          </div>
+
+          <div class="settings-hub-container">
+            <!-- Left sub-navigation -->
+            <div class="settings-sub-nav">
+              <button class="settings-nav-btn active" onclick="switchSettingsSubTab('general', this)">
+                <span class="nav-btn-icon">⚙️</span>
+                <span class="nav-btn-text">General Preferences</span>
+              </button>
+              <button class="settings-nav-btn" onclick="switchSettingsSubTab('ai', this)">
+                <span class="nav-btn-icon">🧠</span>
+                <span class="nav-btn-text">AI Caching &amp; Profile</span>
+              </button>
+              <button class="settings-nav-btn" onclick="switchSettingsSubTab('guidebook', this)">
+                <span class="nav-btn-icon">📖</span>
+                <span class="nav-btn-text">Interactive Guidebook</span>
+              </button>
+            </div>
+
+            <!-- Right content panels -->
+            <div class="settings-hub-content">
+              
+              <!-- Sub-panel: General Preferences -->
+              <div id="settings-panel-general" class="settings-sub-panel active-sub-panel">
+                
+                <div class="card">
+                  <div class="settings-card-header">
+                    <span class="nav-btn-icon" style="font-size: 1.25rem;">☀️</span>
+                    <span class="settings-card-title">App Theme</span>
+                  </div>
+                  <p class="settings-card-desc">Switch between light and dark visual styles.</p>
+                  <div class="pill-group" id="theme-group">
+                    <button class="pill-btn active" id="theme-light" onclick="setTheme('light', this)">☀️ Zen Light</button>
+                    <button class="pill-btn" id="theme-dark" onclick="setTheme('dark', this)">🌙 Dark Mode</button>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="settings-card-header">
+                    <span class="nav-btn-icon" style="font-size: 1.25rem;">⚙️</span>
+                    <span class="settings-card-title">Practice Preferences</span>
+                  </div>
+                  <p class="settings-card-desc">Customize your learning experience during live practice sessions.</p>
+                  <div class="settings-toggle-group">
+                    <div class="toggle-row">
+                      <span class="toggle-label">Auto-Advance<span class="toggle-desc">Automatically jump to the next question immediately after answering correctly.</span></span>
+                      <label class="switch">
+                        <input type="checkbox" id="setting-autoadvance" onchange="toggleSetting('autoAdvance', this.checked)">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                    <div class="toggle-row">
+                      <span class="toggle-label">Strict Mode<span class="toggle-desc">Hide the "Explain More" button until you submit an answer to prevent cheating.</span></span>
+                      <label class="switch">
+                        <input type="checkbox" id="setting-strict" onchange="toggleSetting('strictMode', this.checked)">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                    <div class="toggle-row">
+                      <span class="toggle-label">Performance Mode<span class="toggle-desc">Disable heavy graphics, animations, and blur filters to optimize for low-end hardware.</span></span>
+                      <label class="switch">
+                        <input type="checkbox" id="setting-performance" onchange="toggleSetting('performanceMode', this.checked)">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                    <div class="toggle-row">
+                      <span class="toggle-label">AI Caching Engine<span class="toggle-desc">Use local SQLite caching for instant zero-latency loading. Turn off to force 100% live generation.</span></span>
+                      <label class="switch">
+                        <input type="checkbox" id="setting-cache" onchange="toggleSetting('useCache', this.checked)">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                    <div class="toggle-row">
+                      <span class="toggle-label">Adaptive Difficulty<span class="toggle-desc">Auto-adjust difficulty based on past performance. Turn off to hide Adaptive mode from Dashboard.</span></span>
+                      <label class="switch">
+                        <input type="checkbox" id="setting-adaptive" onchange="toggleSetting('useAdaptive', this.checked)">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                    <div class="toggle-row">
+                      <span class="toggle-label">KaTeX Math Rendering<span class="toggle-desc">Use KaTeX to render beautiful mathematical equations and formulas. Turn off to display raw LaTeX.</span></span>
+                      <label class="switch">
+                        <input type="checkbox" id="setting-katex" onchange="toggleSetting('useKatex', this.checked)">
+                        <span class="slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card danger-glow-card">
+                  <div class="settings-card-header">
+                    <span class="nav-btn-icon" style="font-size: 1.25rem;">🔒</span>
+                    <span class="settings-card-title" style="color: var(--red);">Data &amp; Privacy</span>
+                  </div>
+                  <p class="settings-card-desc">Permanently erase all locally stored practice history from your device. This cannot be undone.</p>
+                  <button class="btn-danger" onclick="clearHistory()">🗑️ Erase All Data</button>
+                </div>
+
+              </div> <!-- end settings-panel-general -->
+
+              <!-- Sub-panel: AI Caching & Profile -->
+              <div id="settings-panel-ai" class="settings-sub-panel hidden-sub-panel">
+                
+                <div class="card premium-glow-card">
+                  <div class="settings-card-header">
+                    <span class="nav-btn-icon" style="font-size: 1.25rem;">📝</span>
+                    <span class="settings-card-title">Academic Profile &amp; AI Personalization</span>
+                  </div>
+                  <p class="settings-card-desc">Tell the AI about your academic strengths, weaknesses, current scores, and study habits. The AI will use this to generate highly personalized questions that target your specific blind spots.</p>
+                  <textarea id="setting-academic-profile" class="settings-textarea" rows="5" placeholder="e.g. I score around 75% in Physics. I am great at Kinematics but struggle with Thermodynamics concepts. I often make silly sign errors in formulas..." oninput="saveAcademicProfile(this.value)"></textarea>
+                </div>
+
+                <div class="card">
+                  <div class="settings-card-header">
+                    <span class="nav-btn-icon" style="font-size: 1.25rem;">🤖</span>
+                    <span class="settings-card-title">AI Pipeline Details</span>
+                  </div>
+                  <p class="settings-card-desc">NVIDIA NIM powers the pipeline using a dual-model setup tailored for educational context routing.</p>
+                  <div class="pill-group" style="flex-wrap: wrap; gap: 0.5rem;">
+                    <button class="pill-btn active" style="cursor: default;">Llama 3.1 8B (Fast)</button>
+                    <button class="pill-btn active" style="background: var(--surface-2); border-color: var(--primary); color: var(--primary); cursor: default;">Llama 3.1 70B (Heavy)</button>
+                  </div>
+                </div>
+
+                <!-- AI Cache & System Health Widget -->
+                <div class="card">
+                  <div class="settings-card-header" style="justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.65rem;">
+                      <span class="nav-btn-icon" style="font-size: 1.25rem;">⚡</span>
+                      <span class="settings-card-title">SQLite Cache &amp; System Health</span>
+                    </div>
+                    <span class="cache-warmth-badge" id="cache-total-badge">0 Pre-warmed</span>
+                  </div>
+                  <p class="settings-card-desc">Practice sessions pull from our SQLite pre-warmed pool for instant, zero-latency starts. Caching is updated concurrently in the background.</p>
+                  
+                  <!-- Active JIT Caching Indicator -->
+                  <div class="cache-status-indicator hidden" id="cache-active-indicator" style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; border-left: 3px solid var(--primary);">
+                    <div class="spinner-small" style="width: 16px; height: 16px; border: 2px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;"></div>
+                    <div style="flex: 1; font-size: 0.82rem; font-weight: 600; color: var(--text);">AI is active in the background filling question pools...</div>
+                  </div>
+
+                  <!-- Cache breakdown diagnostics grid -->
+                  <div class="cache-grid" id="cache-breakdown-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
+                    <!-- Dynamically populated -->
+                  </div>
+
+                  <!-- Action buttons -->
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+                    <button class="pill-btn" onclick="triggerManualPrewarm('Physics')">⚡ Warm Physics</button>
+                    <button class="pill-btn" onclick="triggerManualPrewarm('Chemistry')">⚡ Warm Chemistry</button>
+                    <button class="pill-btn" onclick="triggerManualPrewarm('Mathematics')">⚡ Warm Maths</button>
+                    <button class="pill-btn" onclick="triggerManualPrewarm('Biology')">⚡ Warm Biology</button>
+                    <button class="btn-danger" style="margin-left: auto;" onclick="clearSystemCache()">🗑️ Clear Cache</button>
+                  </div>
+                </div>
+
+              </div> <!-- end settings-panel-ai -->
+
+              <!-- Sub-panel: Interactive Guidebook -->
+              <div id="settings-panel-guidebook" class="settings-sub-panel hidden-sub-panel">
+                
+                <div class="page-header" style="margin-bottom: 1.5rem;">
+                  <div class="guidebook-header-row">
+                    <div>
+                      <h2 class="settings-card-title" style="font-size: 1.2rem;">📖 Interactive App Guidebook</h2>
+                      <p class="settings-card-desc" style="margin-bottom: 0;">Learn how to make the most of Infinity Practice's AI features.</p>
+                    </div>
+                    <div class="guidebook-search-box">
+                      <span class="guidebook-search-icon">🔍</span>
+                      <input type="text" id="guidebook-search-input" class="guidebook-search-input" placeholder="Search guides, features, FAQs...">
+                      <button id="guidebook-search-clear" class="guidebook-search-clear" style="display: none;">✕</button>
+                    </div>
+                  </div>
+                  <span id="guidebook-search-results" class="search-results-info"></span>
+                </div>
+
+                <div class="guidebook-layout">
+                  <!-- Left Sidebar Navigation -->
+                  <div class="guidebook-sidebar">
+                    <button class="guidebook-nav-item active" data-chapter="quickstart">
+                      <span class="guidebook-nav-icon">🚀</span>
+                      <span>Quick Start</span>
+                    </button>
+                    <button class="guidebook-nav-item" data-chapter="practice">
+                      <span class="guidebook-nav-icon">🧠</span>
+                      <span>Practice Engine</span>
+                    </button>
+                    <button class="guidebook-nav-item" data-chapter="pdf">
+                      <span class="guidebook-nav-icon">📄</span>
+                      <span>PDF Studio</span>
+                    </button>
+                    <button class="guidebook-nav-item" data-chapter="formulas">
+                      <span class="guidebook-nav-icon">📐</span>
+                      <span>Formula Engine</span>
+                    </button>
+                    <button class="guidebook-nav-item" data-chapter="chat">
+                      <span class="guidebook-nav-icon">💬</span>
+                      <span>Study Buddy AI</span>
+                    </button>
+                    <button class="guidebook-nav-item" data-chapter="cache">
+                      <span class="guidebook-nav-icon">⚙️</span>
+                      <span>Caching &amp; Profiles</span>
+                    </button>
+                  </div>
+
+                  <!-- Right Content Panels -->
+                  <div class="guidebook-content">
+                    
+                    <!-- Chapter: Quick Start -->
+                    <div id="chap-quickstart" class="guidebook-chapter active">
+                      <div class="guide-card featured">
+                        <span class="guide-badge primary">Overview</span>
+                        <h3 class="guide-card-title">Welcome to Infinity Practice</h3>
+                        <p class="guide-card-desc">
+                          Infinity Practice is an advanced, AI-powered exam preparation dashboard designed to help students prepare for high-stakes exams like <strong>JEE</strong>, <strong>NEET</strong>, <strong>CBSE Boards</strong>, and <strong>Foundation Levels (Class 9 &amp; 10)</strong>. By combining NVIDIA NIM-powered dual-model pipelines (Llama 3.1 8B &amp; 70B) with real-time SQLite pre-warmed caching and an interactive Socratic AI chat tutor, Infinity Practice targets your personal academic weaknesses with zero latency.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Core Modules Breakdown</h3>
+                        <p class="guide-card-desc">The application consists of 5 central pages accessible from the dark sidebar menu on the left:</p>
+                        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>🚀 Live Practice:</strong> Custom test session configuration (question formats, counts, timers, subjects, and adaptive difficulty scaling).
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>📄 PDF Studio:</strong> Generation of high-fidelity printable examination sheets with appended solutions.
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>📊 History:</strong> Comprehensive analytics, error logs, scoring history, and exact-question retake options.
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>📐 Formula Engine:</strong> Instant formulas, formulas discoverable by chapter search, and mathematical deep dives.
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>⚙️ Settings &amp; Info:</strong> Local SQLite pre-warm triggers, performance controls, custom academic personalization profile, and themes.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">First Session Checklist</h3>
+                        <div class="guide-steps">
+                          <div class="guide-step-item">
+                            <div class="guide-step-num">1</div>
+                            <div class="guide-step-content">
+                              <div class="guide-step-title">Select Class &amp; Target Exam</div>
+                              <div class="guide-step-desc">Choose Class 9 (Foundation), 10 (Boards), 11 (JEE/NEET Prep), or 12 (Final Year). Match this with your target exam (JEE, NEET, CBSE, State, or General).</div>
+                            </div>
+                          </div>
+                          <div class="guide-step-item">
+                            <div class="guide-step-num">2</div>
+                            <div class="guide-step-content">
+                              <div class="guide-step-title">Choose Subject &amp; Formats</div>
+                              <div class="guide-step-desc">Select from Physics, Chemistry, Mathematics, Biology, or Computer Science. Then pick one or more question formats (e.g. MCQ, Numerical, Assertion).</div>
+                            </div>
+                          </div>
+                          <div class="guide-step-item">
+                            <div class="guide-step-num">3</div>
+                            <div class="guide-step-content">
+                              <div class="guide-step-title">Launch Your Test</div>
+                              <div class="guide-step-desc">Review your selected configuration in the <strong>Session Preview</strong> panel on the right, then click <strong>🚀 Launch Practice</strong> to begin.</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Chapter: Practice Engine -->
+                    <div id="chap-practice" class="guidebook-chapter">
+                      <div class="guide-card featured">
+                        <span class="guide-badge emerald">Core Engine</span>
+                        <h3 class="guide-card-title">Adaptive Difficulty Mechanics</h3>
+                        <p class="guide-card-desc">
+                          When difficulty is configured to <strong>🧠 Adaptive</strong>, the Live Practice engine evaluates your performance dynamically:
+                        </p>
+                        <div class="guide-highlight-box">
+                          <p>
+                            • <strong>Correct Streak &ge; 2:</strong> Automatically increments difficulty (e.g. from Easy &rarr; Medium, or Medium &rarr; Hard).<br>
+                            • <strong>Incorrect Streak &ge; 2:</strong> Automatically decrements difficulty (e.g. Hard &rarr; Medium, or Medium &rarr; Easy).<br>
+                            • This real-time calibration keeps questions in your <em>zone of proximal development</em> to maximize recall and prevent frustration.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">The 7 Question Formats + CS Predict</h3>
+                        <p class="guide-card-desc">Infinity supports diverse formats to mirror actual JEE/NEET/Boards structures. Click each format for details:</p>
+                        
+                        <div style="margin-top: 1rem;">
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>🔘 Multiple Choice Questions (MCQ)</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Single correct option matching. Equations and scientific notations are rendered using KaTeX. Correct responses award +4 points, incorrect responses award -1 (JEE style), and skipped responses award 0 points.
+                            </div>
+                          </div>
+
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>🔢 Numerical / Integer Type</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Common in JEE. Requires a direct numeric input (integer or decimal). Renders an input text box rather than choice buttons. Answers are checked to double precision, tolerance margins are applied for rounding based on instructions.
+                            </div>
+                          </div>
+
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>🔄 Assertion-Reason (A-R)</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Consists of an Assertion statement and a Reason statement. The options evaluate whether Assertion is True/False, Reason is True/False, and if the Reason is the correct explanation for the Assertion.
+                            </div>
+                          </div>
+
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>✍️ Short Answer / Descriptive</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Requires a conceptual explanation typed into a text block. Upon submission, the AI analyzes your response semantically, comparing it to the rubric solution, and scores it from 0 to 10.
+                            </div>
+                          </div>
+
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>📝 Fill in the Blanks</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Contains sentences with blank fields. Type the correct term or mathematical expression. Inputs are validated with strict string comparisons, ignoring extra whitespaces and case differences.
+                            </div>
+                          </div>
+
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>🔗 Match the Columns</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Displays Column A and Column B containing formulas, properties, or definitions. Select matching coordinates (e.g. A-I, B-III) using the interactive pairing grid.
+                            </div>
+                          </div>
+
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>✅ True / False</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Quick binary checks to evaluate fundamental laws, declarations, or formulas. Good for rapid-fire review sessions.
+                            </div>
+                          </div>
+
+                          <div class="guide-accordion">
+                            <div class="guide-accordion-header">
+                              <span>💻 CS-Exclusive: Predict Output</span>
+                              <span class="guide-accordion-icon">▼</span>
+                            </div>
+                            <div class="guide-accordion-content">
+                              Appears automatically when the subject is set to <strong>Computer Science</strong>. Renders a block of code (e.g., Python loops, C++ inheritance, SQL queries) formatted inside a code mockup, prompting you to predict the exact standard console output.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Timer &amp; Skip Protocols</h3>
+                        <p class="guide-card-desc">
+                          Timers are configurable per question (30s, 1m, 2m, 3m, or No Timer). If a question times out, it is auto-marked as <strong>Skipped</strong>. Skipping a question manually or through timeout resets your streak count to 0, preventing streak point boosts.
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Chapter: PDF Studio -->
+                    <div id="chap-pdf" class="guidebook-chapter">
+                      <div class="guide-card featured">
+                        <span class="guide-badge cyan">PDF Export</span>
+                        <h3 class="guide-card-title">Generating Printable Test Papers</h3>
+                        <p class="guide-card-desc">
+                          PDF Studio transforms your configured session parameters into beautifully formatted, ready-to-print assessment sheets ideal for offline preparation, tests, or classroom worksheets.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Paper Generation Steps</h3>
+                        <div class="guide-steps">
+                          <div class="guide-step-item">
+                            <div class="guide-step-num">1</div>
+                            <div class="guide-step-content">
+                              <div class="guide-step-title">Select 'PDF Studio' Tab in Sidebar</div>
+                              <div class="guide-step-desc">The dashboard switches into PDF Studio mode, modifying the theme slightly and preparing the launch buttons.</div>
+                            </div>
+                          </div>
+                          <div class="guide-step-item">
+                            <div class="guide-step-num">2</div>
+                            <div class="guide-step-content">
+                              <div class="guide-step-title">Configure Sheet Settings</div>
+                              <div class="guide-step-desc">Adjust the class, subject, topic, and select which question formats to mix. Set the question slider to your desired volume (e.g. 15 questions).</div>
+                            </div>
+                          </div>
+                          <div class="guide-step-item">
+                            <div class="guide-step-num">3</div>
+                            <div class="guide-step-content">
+                              <div class="guide-step-title">Export &amp; Print</div>
+                              <div class="guide-step-desc">Click <strong>📄 Generate PDF Paper</strong>. The app queries the AI or cache database, aggregates the items, and directs you to a preview page. Press <code>Ctrl + P</code> on your keyboard to save as PDF or print. The stylesheet automatically excludes navigation elements.</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Layout Structural Specs</h3>
+                        <p class="guide-card-desc">Every generated sheet contains: Student Name line, Date line, Max Score indicator, Exam subject title, structured questions with lettered spacing, an answer key table at the end of the question block, and a step-by-step solutions annex starting on a new page.</p>
+                      </div>
+                    </div>
+
+                    <!-- Chapter: Formula Engine -->
+                    <div id="chap-formulas" class="guidebook-chapter">
+                      <div class="guide-card featured">
+                        <span class="guide-badge amber">Formulas</span>
+                        <h3 class="guide-card-title">Formula Engine Breakdown</h3>
+                        <p class="guide-card-desc">
+                          The Formula Engine serves as an interactive reference vault for scientific formulas, laws, and proofs. It renders high-definition LaTeX math equations in real-time.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Chapter Search &amp; Discovery</h3>
+                        <p class="guide-card-desc">
+                          Type a topic (e.g. <em>Electrostatics</em>, <em>Rotational Motion</em>, <em>Limits &amp; Continuity</em>) in the search box. The database fetches all related equations. Each equation displays with its formula string, standard name, SI units, and application scope.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Interactive Deep Dives</h3>
+                        <p class="guide-card-desc">
+                          Clicking any formula in the list loads it into the <strong>Deep Dive</strong> module, or you can write down an equation manually using standard LaTeX. The engine performs a real-time AI breakdown:
+                        </p>
+                        <div class="guide-highlight-box">
+                          <p>
+                            • <strong>Variables Breakdown:</strong> Lists each term, its physical unit, and dimensional formula.<br>
+                            • <strong>Derivation Roots:</strong> Provides a brief walkthrough of the law or derivation origin.<br>
+                            • <strong>Common Traps:</strong> Warns about sign conventions, unit scaling, and limits of applicability (e.g., constant acceleration assumption in equations of motion).
+                          </p>
+                        </div>
+                        <div class="guide-code-box">
+                          <div class="guide-code-title">Sample Mathematical Render</div>
+                          F = G \frac{m_1 m_2}{r^2} \quad \text{where } G \approx 6.674 \times 10^{-11} \text{ N m}^2/\text{kg}^2
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Chapter: Study Buddy AI -->
+                    <div id="chap-chat" class="guidebook-chapter">
+                      <div class="guide-card featured">
+                        <span class="guide-badge primary">AI Chatbot</span>
+                        <h3 class="guide-card-title">Study Buddy Tutoring Modes</h3>
+                        <p class="guide-card-desc">
+                          The floating chat widget in the bottom-right connects directly to a dual-mode AI pipeline, acting as a personal study assistant during practice.
+                        </p>
+                        <div class="guide-compare-grid">
+                          <div style="background: var(--surface-2); border: 1px solid var(--border); padding: 1rem; border-radius: var(--r-sm);">
+                            <strong style="color: var(--primary);">🧠 Socratic Mode (ON)</strong>
+                            <p style="font-size: 0.85rem; margin-top: 0.4rem; color: var(--text-muted);">
+                              The AI will not give you the final answer. Instead, it analyzes your input, asks leading questions, points out minor mathematical or sign errors, and guides you to arrive at the solution on your own. Excellent for deep conceptual learning.
+                            </p>
+                          </div>
+                          <div style="background: var(--surface-2); border: 1px solid var(--border); padding: 1rem; border-radius: var(--r-sm);">
+                            <strong style="color: var(--text);">⚡ Direct Mode (OFF)</strong>
+                            <p style="font-size: 0.85rem; margin-top: 0.4rem; color: var(--text-muted);">
+                              Acts as a standard assistant. Provides immediate step-by-step proofs, formulas, direct answers, code translations, or conceptual definitions. Best for quick corrections and revisions.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Proactive Toast Notifications</h3>
+                        <p class="guide-card-desc">
+                          When you fail a question (submit incorrect answer) or skip a question twice in a row, the app triggers a <strong>Proactive Help Toast</strong> in the bottom-right corner. Clicking the toast opens the chatbot panel, which receives the exact context of the current question. The AI will then suggest a concept check or a step-by-step hint.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Chat Interface Utilities</h3>
+                        <p class="guide-card-desc">Maximize your chat flow with these interface features:</p>
+                        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>⌨️ Keyboard Shortcuts:</strong> Press <code>Enter</code> to send a query, and <code>Shift + Enter</code> to insert a line break.
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>📋 Message Clipboard:</strong> Hover over any message sent by the AI and click the quick copy icon to clone the text or code snippet to your clipboard.
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>💡 Quick Suggestion Chips:</strong> Click the suggestions at the bottom (e.g. "Explain like I'm 5") for instant, pre-formatted prompt execution.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Chapter: Caching & Profiles -->
+                    <div id="chap-cache" class="guidebook-chapter">
+                      <div class="guide-card featured">
+                        <span class="guide-badge emerald">Cache Engine</span>
+                        <h3 class="guide-card-title">SQLite Cache Engine Mechanics</h3>
+                        <p class="guide-card-desc">
+                          Live Practice queries a local SQLite database cache pool of pre-warmed questions. When the pool has questions matching your requirements, loading occurs in under 200ms rather than waiting 5-8 seconds for a live model inference.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Cache Warming Controls</h3>
+                        <p class="guide-card-desc">
+                          In the Caching sub-tab under Settings, you can view the active cache counts for each subject. Click <strong>⚡ Warm [Subject]</strong> to queue background generation requests, filling the SQLite tables. You can also wipe the database clean by clicking <strong>Clear Cache</strong>, which forces 100% live API generation.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Academic Profiles &amp; Personalization</h3>
+                        <p class="guide-card-desc">
+                          Customize how the AI views you. In the <strong>Academic Profile &amp; AI Personalization</strong> box under Settings, type out details of your learning goals, current scores, or concepts you struggle with:
+                        </p>
+                        <div class="guide-code-box">
+                          <div class="guide-code-title">Sample Personalization Profile</div>
+                          I score 80% in Mechanics but struggle with Thermodynamic principles. I make sign errors in integral calculus. Target: JEE.
+                        </div>
+                        <p class="guide-card-desc" style="margin-top: 0.75rem;">
+                          When generating new questions, the AI imports this string, automatically customizing question parameters to target and resolve your weaknesses.
+                        </p>
+                      </div>
+
+                      <div class="guide-card">
+                        <h3 class="guide-card-title">Interface Preferences Toggles</h3>
+                        <p class="guide-card-desc">Tweak toggles in Settings for direct preference adjustments:</p>
+                        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                          <strong>Auto-Advance:</strong> Instantly transitions to the next question upon correct answer submission.
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>Strict Mode:</strong> Disables the explanation drawer until an answer is submitted, preserving active recall conditions.
+                          </div>
+                          <div style="background: var(--surface-2); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border);">
+                            <strong>Performance Mode:</strong> Disables screen filters, heavy gradients, dynamic transitions, and slows KaTeX rendering. Optimized for legacy/school systems.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div> <!-- end settings-panel-guidebook -->
+
+            </div>
+          </div>
+        </div><!-- end tab-settings -->
+
+        <!-- ── VIEW: FORMULA EXPLAINER ── -->
+        <div id="tab-formulas" class="view-panel hidden">
+          <div class="page-header">
+            <h1 class="page-title">Formula Engine</h1>
+            <p class="page-subtitle">AI-powered deep dive into any mathematical or scientific formula.</p>
+          </div>
+
+          <div class="settings-layout">
+            <!-- Topic Search -->
+            <div class="card">
+              <span class="card-label">1. Discover Formulas by Chapter</span>
+              <p class="card-desc">Type a chapter or topic (e.g., Kinematics, Thermodynamics) to get a cheat sheet.</p>
+              <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                <input type="text" id="formula-topic-input" class="text-input" placeholder="Enter topic..."
+                  style="flex:1;">
+                <button class="btn-primary" onclick="fetchFormulas()" id="btn-fetch-formulas"
+                  style="padding:0.75rem 1.5rem; border:none; border-radius:8px; background:var(--primary); color:white; font-weight:600; cursor:pointer;">Search</button>
+              </div>
+              <div id="formula-list-results"
+                style="margin-top:1.5rem; display:flex; flex-direction:column; gap:0.75rem;"></div>
+            </div>
+
+            <!-- Deep Dive -->
+            <div class="card" id="formula-deep-card">
+              <span class="card-label">2. Deep Dive Explanation</span>
+              <p class="card-desc">Click any formula above to get an instant AI breakdown — or type one manually below.</p>
+
+              <!-- Selected formula chip (shown when a card is clicked) -->
+              <div id="formula-selected-chip" class="hidden" style="
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                margin-top: 1rem;
+                padding: 0.85rem 1.1rem;
+                background: var(--primary-glow, rgba(139,92,246,0.08));
+                border: 1.5px solid var(--primary, #8b5cf6);
+                border-radius: 10px;
+              ">
+                <span style="font-size: 1.1rem; flex-shrink:0;">📐</span>
+                <span id="formula-selected-name" style="font-size:0.82rem; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:0.05em; flex-shrink:0;"></span>
+                <span id="formula-selected-render" style="flex:1; font-family:'JetBrains Mono',monospace; font-size:1rem; color:var(--text); min-width:0;"></span>
+                <button onclick="clearSelectedFormula()" style="background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:1.1rem; line-height:1; padding:0.2rem; flex-shrink:0;" title="Clear selection">✕</button>
+              </div>
+
+              <!-- Manual entry row (always present but secondary) -->
+              <div id="formula-manual-row" style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+                <input type="text" id="formula-deep-input" class="text-input" placeholder="Or type a formula manually…"
+                  style="flex:1; font-family:'JetBrains Mono',monospace; font-size:0.9rem;">
+                <button class="btn-primary" onclick="explainFormula()" id="btn-explain-formula"
+                  style="padding:0.75rem 1.4rem; border:none; border-radius:8px; background:#8b5cf6; color:white; font-weight:600; cursor:pointer; white-space:nowrap;">Deep Dive</button>
+              </div>
+
+              <div id="formula-deep-results" class="hidden"
+                style="margin-top:1.5rem; background:var(--surface-2); padding:1.5rem; border-radius:12px; border:1px solid var(--border);">
+              </div>
+            </div>
+          </div>
+        </div><!-- end tab-formulas -->
+
+        <!-- ── VIEW: HISTORY & ANALYTICS ── -->
+        <div id="tab-history" class="view-panel hidden">
+          <!-- Page Header -->
+          <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <h1 class="page-title">📊 Practice History</h1>
+              <p class="page-subtitle">Your performance analytics and past sessions.</p>
+            </div>
+            <button class="clear-btn" onclick="clearHistory()">🗑️ Clear All</button>
+          </div>
+
+          <!-- Overall Stats -->
+          <section class="glass-card" id="overview-section" style="margin-bottom:1.5rem;">
+            <h2 class="hist-section-title">Overall Performance</h2>
+            <div class="overview-grid" id="overview-grid"></div>
+          </section>
+
+          <!-- Topic Heatmap -->
+          <section class="glass-card" id="topics-section" style="margin-bottom:1.5rem;">
+            <h2 class="hist-section-title">🎯 Topic Strength Map</h2>
+            <div class="topic-map" id="topic-map"></div>
+          </section>
+
+          <!-- Session List -->
+          <section class="glass-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+              <h2 class="hist-section-title" style="margin-bottom:0;">📝 Past Activity</h2>
+              <div class="view-toggle" style="display:flex; gap:0.25rem; background:var(--surface-2); padding:0.25rem; border-radius:8px; border:1px solid var(--border);">
+                <button id="view-btn-sessions" class="view-btn active" onclick="switchView('sessions')" style="padding:0.3rem 0.8rem; border-radius:6px; border:none; background:var(--primary); color:#fff; cursor:pointer; font-size:0.85rem; font-weight:600;">Sessions View</button>
+                <button id="view-btn-questions" class="view-btn" onclick="switchView('questions')" style="padding:0.3rem 0.8rem; border-radius:6px; border:none; background:transparent; color:var(--text); cursor:pointer; font-size:0.85rem; font-weight:600;">All Questions</button>
+              </div>
+            </div>
+            <div class="session-filters" style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center;">
+              <button class="sf-btn active" data-filter="all" onclick="filterSessions(this)">All</button>
+              <button class="sf-btn" data-filter="Physics" onclick="filterSessions(this)">Physics</button>
+              <button class="sf-btn" data-filter="Chemistry" onclick="filterSessions(this)">Chemistry</button>
+              <button class="sf-btn" data-filter="Mathematics" onclick="filterSessions(this)">Maths</button>
+              <button class="sf-btn" data-filter="Biology" onclick="filterSessions(this)">Biology</button>
+              <button class="sf-btn" data-filter="Computer Science" onclick="filterSessions(this)">CS</button>
+              <input type="text" id="hist-search" placeholder="🔍 Search topics..." oninput="searchHistory()" style="margin-left:auto; padding:0.5rem 1rem; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:0.9rem;">
+            </div>
+            <div class="session-list" id="session-list"></div>
+          </section>
+
+          <!-- Empty State -->
+          <div class="empty-state hidden" id="empty-state">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+            <h3>No Activity Yet</h3>
+            <p style="color: var(--text-muted);">Complete a practice session to see your analytics here.</p>
+          </div>
+
+        </div>
+
+      </div><!-- end scroll-area -->
+    </main>
+
+    <!-- ══ Launch Panel ══════════════════════════════════════════ -->
+    <aside class="launch-panel" id="launch-panel">
+
+      <div class="lp-mode-tag" id="lp-mode-tag">🚀 Live Practice</div>
+      <div class="lp-heading">Session Preview</div>
+      <p class="lp-subtext">Your configuration at a glance.</p>
+
+      <div class="lp-summary">
+        <div class="lp-item">
+          <div class="lp-item-icon">🎓</div>
+          <div class="lp-item-body">
+            <span class="lp-item-label">Class</span>
+            <span class="lp-item-val unset" id="lp-class">Not selected</span>
+          </div>
+        </div>
+        <div class="lp-item">
+          <div class="lp-item-icon">🏆</div>
+          <div class="lp-item-body">
+            <span class="lp-item-label">Target Exam</span>
+            <span class="lp-item-val unset" id="lp-exam">Not selected</span>
+          </div>
+        </div>
+
+        <div class="lp-divider"></div>
+
+        <div class="lp-item">
+          <div class="lp-item-icon">📚</div>
+          <div class="lp-item-body">
+            <span class="lp-item-label">Subject</span>
+            <span class="lp-item-val unset" id="lp-subject">Not selected</span>
+          </div>
+        </div>
+        <div class="lp-item">
+          <div class="lp-item-icon">🔖</div>
+          <div class="lp-item-body">
+            <span class="lp-item-label">Topic</span>
+            <span class="lp-item-val unset" id="lp-topic">Any</span>
+          </div>
+        </div>
+
+        <div class="lp-divider"></div>
+
+        <div class="lp-item">
+          <div class="lp-item-icon">🎯</div>
+          <div class="lp-item-body">
+            <span class="lp-item-label">Difficulty</span>
+            <span class="lp-item-val" id="lp-diff">Medium</span>
+          </div>
+        </div>
+        <!-- Interactive Questions Slider in Session Preview -->
+        <div class="lp-item lp-slider-item">
+          <div class="lp-item-icon">🔢</div>
+          <div class="lp-item-body">
+            <div class="lp-slider-header">
+              <span class="lp-item-label">Questions</span>
+              <span class="lp-item-val lp-slider-count" id="lp-count">10</span>
+            </div>
+            <div class="lp-slider-track-wrap">
+              <input type="range" id="lp-q-slider" class="lp-range-slider" min="5" max="50" value="10" step="5" oninput="syncSliderFromPanel(this)">
+              <div class="lp-slider-labels">
+                <span>5</span>
+                <span>50</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="lp-timer-container" class="collapsible-container">
+          <div class="lp-item" id="lp-item-timer">
+            <div class="lp-item-icon">⏱️</div>
+            <div class="lp-item-body">
+              <span class="lp-item-label">Timer</span>
+              <span class="lp-item-val" id="lp-timer">1 min / Q</span>
+            </div>
+          </div>
+        </div>
+        <div class="lp-item">
+          <div class="lp-item-icon">📋</div>
+          <div class="lp-item-body">
+            <span class="lp-item-label">Formats</span>
+            <span class="lp-item-val unset" id="lp-formats">None selected</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-actions" style="position: relative; height: 48px; overflow: hidden; margin-top: 1rem;">
+        <button class="btn-launch" id="lp-start-btn" onclick="startPractice()" style="position: absolute; width: 100%; top: 0; left: 0; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;">🚀 Launch Practice</button>
+        <button class="btn-pdf" id="lp-pdf-btn" onclick="generatePaper()" style="position: absolute; width: 100%; top: 0; left: 0; transform: translateY(48px); opacity: 0; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease;">📄 Generate PDF Paper</button>
+      </div>
+
+    </aside>
+
+  </div><!-- end app-layout -->
+
+  <script src="js/home.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/guidebook.js"></script>
+  <script>
+    /* ── Tab Switching ── */
+    let currentActiveTab = 'practice'; // Tracks active tab state
+
+    function switchSettingsSubTab(subtab, btn) {
+      document.querySelectorAll('.settings-nav-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      document.querySelectorAll('.settings-sub-panel').forEach(p => {
+        p.classList.remove('active-sub-panel');
+        p.classList.add('hidden-sub-panel');
+      });
+
+      const target = document.getElementById('settings-panel-' + subtab);
+      if (target) {
+        target.classList.remove('hidden-sub-panel');
+        target.classList.add('active-sub-panel');
+      }
+    }
+
+    function switchTab(tab, el) {
+      if (tab === currentActiveTab) return;
+
+      const isLowEnd = document.documentElement.classList.contains('low-end');
+      const oldTab = currentActiveTab;
+      currentActiveTab = tab;
+
+      if (tab === 'settings' && typeof window.fetchCacheStatus === 'function') {
+        window.fetchCacheStatus();
+      }
+
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (el) el.classList.add('active');
+
+      const oldPanelId = (oldTab === 'pdf' || oldTab === 'practice') ? 'tab-dashboard' : 'tab-' + oldTab;
+      const newPanelId = (tab === 'pdf' || tab === 'practice') ? 'tab-dashboard' : 'tab-' + tab;
+
+      const oldPanel = document.getElementById(oldPanelId);
+      const newPanel = document.getElementById(newPanelId);
+      const launchPanel = document.getElementById('launch-panel');
+
+      function updateSharedDashMode(targetTab) {
+        const title = document.getElementById('main-title');
+        const sub = document.getElementById('main-subtitle');
+        const modeTag = document.getElementById('lp-mode-tag');
+        const timerContainer = document.getElementById('fg-timer-container');
+        const lpTimerContainer = document.getElementById('lp-timer-container');
+        const startBtn = document.getElementById('lp-start-btn');
+        const pdfBtn = document.getElementById('lp-pdf-btn');
+
+        if (targetTab === 'practice') {
+          document.documentElement.removeAttribute('data-theme-mode');
+          
+          // Animate text crossfade
+          if (title) { title.classList.add('header-crossfade', 'fade-out'); }
+          if (sub) { sub.classList.add('header-crossfade', 'fade-out'); }
+          if (modeTag) modeTag.style.opacity = '0';
+          
+          setTimeout(() => {
+            if (title) { title.textContent = 'Live Practice'; title.classList.remove('fade-out'); }
+            if (sub) { sub.textContent = 'Configure the AI for your next interactive session.'; sub.classList.remove('fade-out'); }
+            if (modeTag) { modeTag.textContent = '🚀 Live Practice'; modeTag.style.opacity = '1'; }
+          }, 150);
+
+          if (timerContainer) timerContainer.classList.remove('collapsed');
+          if (lpTimerContainer) lpTimerContainer.classList.remove('collapsed');
+          
+          // Button slide-swap
+          if (startBtn) { startBtn.style.transform = 'translateY(0)'; startBtn.style.opacity = '1'; }
+          if (pdfBtn) { pdfBtn.style.transform = 'translateY(48px)'; pdfBtn.style.opacity = '0'; }
+        } else if (targetTab === 'pdf') {
+          document.documentElement.setAttribute('data-theme-mode', 'pdf');
+          
+          if (title) { title.classList.add('header-crossfade', 'fade-out'); }
+          if (sub) { sub.classList.add('header-crossfade', 'fade-out'); }
+          if (modeTag) modeTag.style.opacity = '0';
+          
+          setTimeout(() => {
+            if (title) { title.textContent = 'PDF Studio'; title.classList.remove('fade-out'); }
+            if (sub) { sub.textContent = 'Generate a beautifully formatted test paper.'; sub.classList.remove('fade-out'); }
+            if (modeTag) { modeTag.textContent = '📄 PDF Studio'; modeTag.style.opacity = '1'; }
+          }, 150);
+
+          if (timerContainer) timerContainer.classList.add('collapsed');
+          if (lpTimerContainer) lpTimerContainer.classList.add('collapsed');
+          
+          // Button slide-swap
+          if (startBtn) { startBtn.style.transform = 'translateY(-48px)'; startBtn.style.opacity = '0'; }
+          if (pdfBtn) { pdfBtn.style.transform = 'translateY(0)'; pdfBtn.style.opacity = '1'; }
+        }
+      }
+
+      // If low end hardware, bypass all transitions for efficiency
+      if (isLowEnd) {
+        if (oldPanelId !== newPanelId) {
+          if (oldPanel) { oldPanel.classList.remove('active-panel'); oldPanel.classList.add('hidden'); }
+          if (newPanel) { newPanel.classList.remove('hidden'); newPanel.classList.add('active-panel'); }
+        }
+        if (tab === 'pdf' || tab === 'practice') {
+          if (launchPanel) launchPanel.classList.remove('panel-hidden');
+          document.body.classList.remove('sidebar-hidden');
+          updateSharedDashMode(tab);
+        } else {
+          if (launchPanel) launchPanel.classList.add('panel-hidden');
+          document.body.classList.add('sidebar-hidden');
+        }
+        if (tab === 'history' && typeof window.initHistoryTab === 'function') window.initHistoryTab();
+        return;
+      }
+
+      // 1. Switch within the same dashboard (Practice ↔ PDF Studio)
+      if (oldPanelId === newPanelId && newPanelId === 'tab-dashboard') {
+        updateSharedDashMode(tab);
+        return;
+      }
+
+      // 2. Transitioning to a different panel
+      if (oldPanel) {
+        oldPanel.classList.add('leaving-panel');
+        oldPanel.classList.remove('active-panel');
+      }
+
+      if (tab === 'pdf' || tab === 'practice') {
+        if (launchPanel) launchPanel.classList.remove('panel-hidden');
+        document.body.classList.remove('sidebar-hidden');
+        updateSharedDashMode(tab);
+      } else {
+        if (launchPanel) launchPanel.classList.add('panel-hidden');
+        document.body.classList.add('sidebar-hidden');
+      }
+
+      setTimeout(() => {
+        if (oldPanel) {
+          oldPanel.classList.add('hidden');
+          oldPanel.classList.remove('leaving-panel');
+        }
+
+        if (newPanel) {
+          newPanel.classList.remove('hidden');
+          // Force layout reflow to ensure entrance transition fires
+          void newPanel.offsetHeight;
+          newPanel.classList.add('active-panel');
+        }
+
+        if (tab === 'history' && typeof window.initHistoryTab === 'function') {
+          window.initHistoryTab();
+        }
+      }, 240); // Syncs with transition duration
+    }
+
+    /* ── Live Panel Updates ── */
+    function updatePanel() {
+      // Class
+      const cls = document.querySelector('.class-btn.active');
+      const lpC = document.getElementById('lp-class');
+      if (cls) { lpC.textContent = 'Class ' + cls.dataset.class; lpC.classList.remove('unset'); }
+      else { lpC.textContent = 'Not selected'; lpC.classList.add('unset'); }
+
+      // Exam
+      const ex = document.querySelector('#exam-group .pill-btn.active');
+      const lpE = document.getElementById('lp-exam');
+      if (ex) { lpE.textContent = ex.dataset.value; lpE.classList.remove('unset'); }
+      else { lpE.textContent = 'Not selected'; lpE.classList.add('unset'); }
+
+      // Subject
+      const sj = document.querySelector('.subj-btn.active');
+      const lpS = document.getElementById('lp-subject');
+      if (sj) { lpS.textContent = sj.dataset.subject; lpS.classList.remove('unset'); }
+      else { lpS.textContent = 'Not selected'; lpS.classList.add('unset'); }
+
+      // Topic
+      const topic = document.getElementById('topic-input').value.trim();
+      const lpT = document.getElementById('lp-topic');
+      if (topic) { lpT.textContent = topic; lpT.classList.remove('unset'); }
+      else { lpT.textContent = 'Any'; lpT.classList.add('unset'); }
+
+      // Difficulty
+      const df = document.querySelector('#diff-group .pill-btn.active');
+      if (df) document.getElementById('lp-diff').textContent = df.dataset.value;
+
+      // Count — sync both the display text and the panel slider thumb
+      const cnt = document.getElementById('q-count');
+      if (cnt) {
+        const val = cnt.value;
+        document.getElementById('lp-count').textContent = val;
+        const lpSlider = document.getElementById('lp-q-slider');
+        if (lpSlider) { lpSlider.value = val; updateLpSliderFill(lpSlider); }
+      }
+
+      // Timer
+      const tmr = document.getElementById('timer-select');
+      const map = { '0': 'No Timer', '30': '30 sec / Q', '60': '1 min / Q', '120': '2 min / Q', '180': '3 min / Q' };
+      if (tmr) document.getElementById('lp-timer').textContent = map[tmr.value] || '1 min / Q';
+
+      // Formats (selected fmt-btn elements)
+      const fmtEl = document.getElementById('lp-formats');
+      if (fmtEl) {
+        const activeFmts = [...document.querySelectorAll('.fmt-btn.active')].map(b => b.textContent.trim().replace(/^[^\w\s]/, ''));
+        if (activeFmts.length) { fmtEl.textContent = activeFmts.join(', '); fmtEl.classList.remove('unset'); }
+        else { fmtEl.textContent = 'None selected'; fmtEl.classList.add('unset'); }
+      }
+    }
+
+    // Sync from panel slider → main slider
+    function syncSliderFromPanel(lpSlider) {
+      const min = Number(lpSlider.min), max = Number(lpSlider.max), val = Number(lpSlider.value);
+      const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+      lpSlider.style.setProperty('--lp-slider-pct', pct);
+
+      const mainSlider = document.getElementById('q-count');
+      const countDisplay = document.getElementById('count-display');
+      const lpCount = document.getElementById('lp-count');
+      if (mainSlider) mainSlider.value = val;
+      if (countDisplay) countDisplay.textContent = val;
+      if (lpCount) {
+        lpCount.textContent = val;
+        // Micro-bounce animation on the badge
+        lpCount.style.transform = 'scale(1.3)';
+        setTimeout(() => { lpCount.style.transform = ''; }, 150);
+      }
+    }
+
+    // Helper: update the fill track CSS var on the panel slider
+    function updateLpSliderFill(slider) {
+      if (!slider) return;
+      const min = Number(slider.min), max = Number(slider.max), val = Number(slider.value);
+      const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+      slider.style.setProperty('--lp-slider-pct', pct);
+    }
+
+    // Attach update listeners after DOM ready
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('topic-input').addEventListener('input', updatePanel);
+      document.getElementById('q-count').addEventListener('input', updatePanel);
+      document.getElementById('timer-select').addEventListener('change', updatePanel);
+      // Intercept ALL selection functions so launch panel always reflects current state
+      const orig = {
+        sc: window.selectClass,
+        sp: window.selectPill,
+        ss: window.selectSubject,
+        sqt: window.selectQType,
+      };
+      if (orig.sc) window.selectClass = function (b) { orig.sc(b); updatePanel(); };
+      if (orig.sp) window.selectPill = function (b, g) { orig.sp(b, g); updatePanel(); };
+      if (orig.ss) window.selectSubject = function (b) { orig.ss(b); updatePanel(); };
+      if (orig.sqt) window.selectQType = function (b) { orig.sqt(b); updatePanel(); };
+
+      // Check for Retake Configuration from History Tab
+      const retakeData = localStorage.getItem('infinityRetakeConfig');
+      if (retakeData) {
+        try {
+          const rc = JSON.parse(retakeData);
+          if (window.applyRetakeConfig) {
+            window.applyRetakeConfig(rc);
+          }
+          // Consume the config so it only applies once
+          localStorage.removeItem('infinityRetakeConfig');
+        } catch (e) {
+          console.warn('Could not parse retake config', e);
+        }
+      }
+
+      // Check query parameter 'tab' to switch tab on load
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam) {
+        const tabBtn = document.getElementById('nav-' + tabParam);
+        if (tabBtn) switchTab(tabParam, tabBtn);
+      }
+
+      updatePanel();
+    });
+
+    /* ── Dark Mode ── */
+    function setTheme(theme, el) {
+      document.querySelectorAll('#theme-group .pill-btn').forEach(b => b.classList.remove('active'));
+      if (el) el.classList.add('active');
+      if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('infinityTheme', theme);
+    }
+
+    /* ── Restore theme & performance on load ── */
+    (function () {
+      const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+      const isLowEnd = (navigator.hardwareConcurrency || 4) <= 2;
+      if (prefs.performanceMode || isLowEnd) {
+        document.documentElement.classList.add('low-end');
+      }
+      const t = localStorage.getItem('infinityTheme');
+      if (t === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        const d = document.getElementById('theme-dark');
+        const l = document.getElementById('theme-light');
+        if (d) d.classList.add('active');
+        if (l) l.classList.remove('active');
+      }
+    })();
+
+    /* ── Clear History ── */
+    function clearHistory() {
+      if (confirm('Delete all practice history? This cannot be undone.')) {
+        localStorage.removeItem('infinityHistory');
+        alert('History cleared.');
+      }
+    }
+  </script>
+  <!-- ══ AI CHATBOT INTEGRATION ══ -->
+  <link rel="stylesheet" href="css/chat.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="js/chat.js" defer></script>
+
+  <!-- Proactive Toast Notification -->
+  <div class="chat-toast" id="chat-toast">
+    <div class="toast-icon">💡</div>
+    <div class="toast-text">It looks like you're struggling with this topic. Want me to break it down?</div>
+  </div>
+
+  <!-- Chatbot Floating Action Button -->
+  <button id="chatbot-fab" aria-label="Open AI Study Buddy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </button>
+
+  <!-- Chatbot Panel -->
+  <div id="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2a2 2 0 0 1 2-2z"/><path d="M12 18v-4"/><path d="M8 10h8"/>
+          </svg>
+        </div>
+        <div class="chat-title-group" style="flex: 1;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3>Study Buddy</h3>
+            <label class="socratic-toggle" title="Enable Socratic Tutor Mode">
+              <span class="socratic-label-text">Socratic Mode</span>
+              <input type="checkbox" id="chat-tutor-mode">
+              <span class="socratic-slider"></span>
+            </label>
+          </div>
+          <span class="chat-subtitle"><div class="chat-status-dot"></div> Online</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="chat-clear-btn" id="chat-clear-btn" aria-label="Clear Chat" title="Clear Conversation">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+        </button>
+        <button class="chat-close-btn" id="chat-close-btn" aria-label="Close Chat">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="chat-body" id="chat-body">
+      <!-- Messages appear here -->
+    </div>
+
+    <div class="chat-footer">
+      <div class="chat-suggestions" id="chat-suggestions">
+        <button class="chat-suggestion-chip">Give me a quick quiz</button>
+        <button class="chat-suggestion-chip">Explain like I'm 5</button>
+        <button class="chat-suggestion-chip">Summarize this topic</button>
+      </div>
+      <div class="chat-input-wrapper">
+        <textarea id="chat-input-field" placeholder="Ask a question or request a hint..." rows="1"></textarea>
+        <button id="chat-send-btn" class="chat-send-btn" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+      <div class="chat-input-hint">Enter to send, Shift + Enter for new line</div>
+    </div>
+  </div>
+</body>
+
+</html>

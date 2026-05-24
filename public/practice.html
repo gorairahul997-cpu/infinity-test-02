@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Infinity Practice — Live AI-powered question session" />
+  <title>Practice Session | Infinity Practice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- KaTeX for blazing fast equation rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    (function () {
+      function patchKatex() {
+        if (!window.katex) return;
+        const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+        const useKatex = prefs.useKatex !== false;
+
+        // Save original functions if not already done
+        if (!window.__orig_renderMathInElement && window.renderMathInElement) {
+          window.__orig_renderMathInElement = window.renderMathInElement;
+        }
+        if (window.katex && !window.katex.__orig_renderToString && window.katex.renderToString) {
+          window.katex.__orig_renderToString = window.katex.renderToString;
+        }
+
+        // Monkeypatch renderMathInElement
+        window.renderMathInElement = function (element, options) {
+          const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+          if (currentPrefs.useKatex === false) return; // Do nothing if disabled
+
+          const opt = options || {};
+          opt.throwOnError = false;
+          opt.errorColor = 'currentColor'; // Hide red error markup
+          
+          try {
+            if (window.__orig_renderMathInElement) {
+              window.__orig_renderMathInElement(element, opt);
+            }
+          } catch (e) {
+            console.warn('Intercepted renderMathInElement error:', e);
+          }
+        };
+
+        // Monkeypatch katex.renderToString
+        if (window.katex) {
+          window.katex.renderToString = function (tex, options) {
+            const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+            const opt = options || {};
+            if (currentPrefs.useKatex === false) {
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            
+            // Force throwOnError = true so we can catch any parsing/syntax errors.
+            const forceThrowOpt = { ...opt, throwOnError: true };
+            
+            try {
+              if (window.katex.__orig_renderToString) {
+                return window.katex.__orig_renderToString(tex, forceThrowOpt);
+              }
+            } catch (e) {
+              console.warn('Intercepted renderToString error:', e, 'for formula:', tex);
+              if (opt.throwOnError === true) {
+                throw e; // Propagate if the caller explicitly requested it
+              }
+              // Escape math text to prevent HTML injection and return raw math in current text color
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            return tex;
+          };
+        }
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', patchKatex);
+      } else {
+        patchKatex();
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/practice.css" />
+  <script>
+    (function () {
+      const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+      const isLowEnd = (navigator.hardwareConcurrency || 4) <= 2;
+      if (prefs.performanceMode || isLowEnd) {
+        document.documentElement.classList.add('low-end');
+      }
+      if (localStorage.getItem('infinityTheme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+</head>
+<body class="practice-page">
+
+<!-- Background -->
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+</div>
+<div class="p-bg-grid"></div>
+
+<!-- ══ TOP HEADER ════════════════════════════════════════════════════ -->
+<header class="p-header" id="p-header">
+
+  <!-- Left: Back + Session Info -->
+  <div class="p-header-left">
+    <a href="index.html" class="p-back-btn" title="Back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </a>
+    <div class="p-session-info">
+      <span class="p-subject" id="hdr-subject">Physics</span>
+      <span class="p-exam-badge" id="hdr-exam">GENERAL</span>
+    </div>
+  </div>
+
+  <!-- Center: Progress -->
+  <div class="p-header-center">
+    <div class="p-progress-wrap">
+      <div class="p-progress-track">
+        <div class="p-progress-fill" id="progress-fill"></div>
+        <div class="p-progress-dot" id="progress-dot"></div>
+      </div>
+      <span class="p-progress-text" id="progress-text">1 of 10</span>
+    </div>
+  </div>
+
+  <!-- Right: Stats -->
+  <div class="p-header-right">
+    <div class="p-stat-pill">
+      <span class="p-stat-icon">✓</span>
+      <span class="p-stat-val" id="hdr-score">0</span>
+      <span class="p-stat-label">pts</span>
+    </div>
+    <div class="p-stat-pill fire-pill" id="streak-display">
+      <span class="p-stat-icon">🔥</span>
+      <span class="p-stat-val" id="streak-count">0</span>
+    </div>
+    <div class="p-timer-pill" id="timer-wrap">
+      <svg class="timer-ring-svg" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+        <circle cx="18" cy="18" r="15" fill="none" stroke="var(--cyan)" stroke-width="2"
+                stroke-linecap="round" stroke-dasharray="94" stroke-dashoffset="0"
+                id="timer-ring-circle" transform="rotate(-90 18 18)"/>
+      </svg>
+      <span class="p-timer-val" id="timer-val">--</span>
+    </div>
+  </div>
+
+</header>
+
+<!-- ══ QUESTION NAVIGATOR ═══════════════════════════════════════════ -->
+<div class="p-nav-dots-wrap">
+  <div class="p-nav-dots" id="p-nav-dots"></div>
+</div>
+
+<!-- ══ MAIN SPLIT LAYOUT ════════════════════════════════════════════ -->
+<main class="p-main">
+  <div class="p-card">
+
+    <!-- Loading -->
+    <div class="p-loading" id="loading-card">
+      <div class="p-loader">
+        <div class="p-loader-ring"></div>
+        <div class="p-loader-core"></div>
+      </div>
+      <p class="p-loading-text">Generating question…</p>
+      <p class="p-loading-sub" id="loading-sub">NVIDIA NIM · AI Powered</p>
+    </div>
+
+    <!-- Error -->
+    <div class="p-error hidden" id="error-card">
+      <span class="p-error-icon">⚠️</span>
+      <h3 id="error-title">Something went wrong</h3>
+      <p id="error-msg">Check your API key and try again.</p>
+      <button class="p-retry-btn" onclick="loadNextQuestion()">🔄 Retry</button>
+    </div>
+
+  <!-- ── LEFT PANEL: Question ─────────────────────────────────────── -->
+  <section class="p-left" id="p-left">
+
+    <!-- Question Content (shown when question is ready) -->
+    <div class="p-question-pane hidden" id="question-pane">
+
+      <!-- Meta row -->
+      <div class="p-q-meta">
+        <span class="p-q-badge" id="q-type-badge">MCQ</span>
+        <span class="p-q-topic" id="q-topic">Topic</span>
+        <span class="p-q-diff" id="q-diff">Medium</span>
+        <span class="p-q-num" id="q-num-display">Q1</span>
+      </div>
+
+      <!-- Question Text -->
+      <div class="p-q-body">
+        <p class="p-q-text" id="q-text-main"></p>
+
+        <!-- Assertion block -->
+        <div class="p-assertion hidden" id="assertion-block">
+          <div class="p-assertion-a" id="assertion-stmt"></div>
+          <div class="p-assertion-divider">Reason</div>
+          <div class="p-assertion-r" id="reason-stmt"></div>
+        </div>
+
+        <!-- Match Lists block -->
+        <div class="p-match hidden" id="match-block" style="display:flex; gap:1rem; margin-top:1rem;">
+          <div style="flex:1; border:1px solid var(--border); border-radius:8px; padding:1rem; background:var(--surface-2);">
+             <div style="font-weight:700; margin-bottom:0.5rem; text-align:center; color:var(--text); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">List I</div>
+             <ul id="match-list1" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.5rem; font-size:0.9rem; color:var(--text);"></ul>
+          </div>
+          <div style="flex:1; border:1px solid var(--border); border-radius:8px; padding:1rem; background:var(--surface-2);">
+             <div style="font-weight:700; margin-bottom:0.5rem; text-align:center; color:var(--text); font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">List II</div>
+             <ul id="match-list2" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.5rem; font-size:0.9rem; color:var(--text);"></ul>
+          </div>
+        </div>
+
+        <!-- Given values -->
+        <div class="p-given hidden" id="given-block">
+          <span class="p-given-title">Given</span>
+          <ul class="p-given-list" id="given-list"></ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── RIGHT PANEL: Answers + Feedback ─────────────────────────── -->
+  <section class="p-right" id="p-right">
+
+    <!-- Answer area (hidden until question loaded) -->
+    <div class="p-answer-pane hidden" id="answer-pane">
+
+      <!-- MCQ Options -->
+      <div class="p-options" id="options-grid"></div>
+
+      <!-- Numerical input -->
+      <div class="p-num-wrap hidden" id="numerical-input-wrap">
+        <label class="p-input-label" for="num-answer">Enter your answer</label>
+        <div class="p-num-row">
+          <input type="text" id="num-answer" class="p-num-input"
+                 placeholder="Value with units…" autocomplete="off" />
+          <button class="p-submit-btn" id="submit-num-btn" onclick="submitNumerical()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Submit
+          </button>
+        </div>
+      </div>
+
+      <!-- Short Answer -->
+      <div class="p-short-wrap hidden" id="short-input-wrap">
+        <label class="p-input-label" for="short-answer">Write your answer</label>
+        <textarea id="short-answer" class="p-short-textarea" rows="3"
+                  placeholder="Type your answer here…"></textarea>
+        <button class="p-submit-btn wide" id="submit-short-btn" onclick="submitShort()">
+          Check My Answer
+        </button>
+        <!-- Self-evaluation (shown after model answer is revealed) -->
+        <div class="p-self-eval hidden" id="self-eval-wrap">
+          <p class="p-self-eval-label">Compare with model answer — how did you do?</p>
+          <div class="p-self-eval-btns">
+            <button class="p-self-btn correct-btn" onclick="selfEvaluate('correct')">✅ I Got It</button>
+            <button class="p-self-btn wrong-btn"   onclick="selfEvaluate('wrong')">❌ I Missed It</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Feedback Panel ──────────────────────────────────────── -->
+      <div class="p-feedback hidden" id="feedback-panel">
+
+        <!-- Verdict bar -->
+        <div class="p-verdict" id="feedback-header">
+          <div class="p-verdict-icon" id="feedback-icon">✅</div>
+          <div class="p-verdict-text">
+            <span class="p-verdict-title" id="feedback-title">Correct!</span>
+            <span class="p-verdict-pts" id="feedback-points">+10 pts</span>
+          </div>
+        </div>
+
+        <!-- Feedback Tabs -->
+        <div class="p-feedback-tabs" id="feedback-tabs">
+          <button class="p-tab-btn active" id="tab-btn-solution" onclick="switchFeedbackTab('solution')">Solution</button>
+          <button class="p-tab-btn" id="tab-btn-analysis" onclick="switchFeedbackTab('analysis')">Detailed Analysis</button>
+        </div>
+
+        <!-- Tab Content: Solution -->
+        <div class="p-tab-content active" id="tab-solution">
+          <!-- Correct answer reveal -->
+          <div class="p-correct-reveal hidden" id="correct-ans-block">
+            <span class="p-reveal-label">Correct Answer</span>
+            <span class="p-reveal-val" id="correct-ans-text"></span>
+          </div>
+
+          <!-- Explanation -->
+          <div class="p-explanation" id="explanation-block">
+            <div class="p-exp-label">
+              <span class="p-exp-icon">💡</span>
+              Explanation
+            </div>
+            <p class="p-exp-text" id="exp-text"></p>
+          </div>
+        </div>
+
+        <!-- Tab Content: Detailed Analysis -->
+        <div class="p-tab-content" id="tab-analysis">
+          <!-- Solution steps -->
+          <div class="p-steps hidden" id="steps-block">
+            <div class="p-steps-title">Solution Steps</div>
+            <ol class="p-steps-list" id="steps-list"></ol>
+          </div>
+
+          <!-- Key points -->
+          <div class="p-keypoints hidden" id="keypoints-block">
+            <div class="p-kp-title">Key Points</div>
+            <ul class="p-kp-list" id="kp-list"></ul>
+          </div>
+
+          <!-- Deeper explain -->
+          <div class="p-deeper-wrap">
+            <button class="p-deeper-btn" id="deeper-btn" onclick="getDeeperExplanation()">
+              🔍 Explain More Deeply
+            </button>
+            <div class="p-deeper-result hidden" id="deeper-result">
+              <p id="deeper-text"></p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end feedback -->
+
+      <!-- ── Actions ─────────────────────────────────────────────── -->
+      <div class="p-actions">
+        <button class="p-skip-btn" id="skip-btn" onclick="skipQuestion()">
+          Skip
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="p-next-btn hidden" id="next-btn" onclick="nextQuestion()">
+          Next Question
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+    </div><!-- end answer-pane -->
+  </section>
+
+  </div><!-- end p-card -->
+</main>
+
+<!-- ══ SESSION COMPLETE MODAL ════════════════════════════════════════ -->
+<div class="p-modal-overlay hidden" id="session-done-overlay">
+  <canvas id="confetti-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"></canvas>
+  <div class="p-modal-box" id="session-done-modal" style="position: relative; z-index: 2;">
+    <div class="p-modal-emoji" id="done-emoji">🎉</div>
+    <h2 class="p-modal-title">Session Complete!</h2>
+
+    <div class="p-score-ring">
+      <svg viewBox="0 0 120 120" class="ring-svg">
+        <circle cx="60" cy="60" r="50" class="ring-bg"/>
+        <circle cx="60" cy="60" r="50" class="ring-fill" id="ring-fill-el"/>
+      </svg>
+      <div class="ring-inner">
+        <span class="ring-pct" id="ring-pct">--</span>
+        <span class="ring-label">Score</span>
+      </div>
+    </div>
+
+    <div class="p-final-stats">
+      <div class="p-fs-item correct-color">
+        <span class="p-fs-num" id="fs-correct">0</span>
+        <span class="p-fs-label">Correct</span>
+      </div>
+      <div class="p-fs-item wrong-color">
+        <span class="p-fs-num" id="fs-wrong">0</span>
+        <span class="p-fs-label">Wrong</span>
+      </div>
+      <div class="p-fs-item skip-color">
+        <span class="p-fs-num" id="fs-skipped">0</span>
+        <span class="p-fs-label">Skipped</span>
+      </div>
+      <div class="p-fs-item streak-color">
+        <span class="p-fs-num" id="fs-streak">0</span>
+        <span class="p-fs-label">Best Streak</span>
+      </div>
+    </div>
+
+    <div class="p-modal-actions">
+      <button class="p-modal-btn primary" onclick="goToResults()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span>View Results</span>
+      </button>
+      <button class="p-modal-btn secondary" onclick="restartSession()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 4v6h-6"></path>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span>Practice Again</span>
+      </button>
+      <a href="index.html" class="p-modal-btn ghost">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span>Home</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ QUESTION REVIEW MODAL ═══════════════════════════════════════ -->
+<div class="p-modal-overlay hidden" id="review-modal-overlay" style="z-index:9999;">
+  <div class="p-modal-box" style="text-align:left; max-width:800px; max-height:85vh; overflow-y:auto; padding:2rem; width:95%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+       <h2 id="rm-title" style="margin:0; font-size:1.4rem; color:var(--text);">Review Q1</h2>
+       <button onclick="document.getElementById('review-modal-overlay').classList.add('hidden')" style="background:var(--surface-2); border:1px solid var(--border); color:var(--text); width:36px; height:36px; border-radius:50%; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+    </div>
+    <div id="rm-content" style="display:flex; flex-direction:column; gap:1.25rem;"></div>
+  </div>
+</div>
+
+  <script src="js/practice.js"></script>
+  <!-- ══ AI CHATBOT INTEGRATION ══ -->
+  <link rel="stylesheet" href="css/chat.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="js/chat.js" defer></script>
+
+  <!-- Proactive Toast Notification -->
+  <div class="chat-toast" id="chat-toast">
+    <div class="toast-icon">💡</div>
+    <div class="toast-text">It looks like you're struggling with this topic. Want me to break it down?</div>
+  </div>
+
+  <!-- Chatbot Floating Action Button -->
+  <button id="chatbot-fab" aria-label="Open AI Study Buddy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  </button>
+
+  <!-- Chatbot Panel -->
+  <div id="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2a2 2 0 0 1 2-2z"/><path d="M12 18v-4"/><path d="M8 10h8"/>
+          </svg>
+        </div>
+        <div class="chat-title-group" style="flex: 1;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <h3>Study Buddy</h3>
+            <label class="socratic-toggle" title="Enable Socratic Tutor Mode">
+              <span class="socratic-label-text">Socratic Mode</span>
+              <input type="checkbox" id="chat-tutor-mode">
+              <span class="socratic-slider"></span>
+            </label>
+          </div>
+          <span class="chat-subtitle"><div class="chat-status-dot"></div> Online</span>
+        </div>
+      </div>
+      <button class="chat-close-btn" id="chat-close-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    
+    <div class="chat-body" id="chat-body">
+      <!-- Messages appear here -->
+    </div>
+
+    <div class="chat-footer">
+      <div class="chat-input-wrapper">
+        <textarea id="chat-input-field" placeholder="Ask a question or request a hint..." rows="1"></textarea>
+        <button id="chat-send-btn" class="chat-send-btn" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+      <div class="chat-input-hint">Enter to send, Shift + Enter for new line</div>
+    </div>
+  </div>
+</body>
+</html>

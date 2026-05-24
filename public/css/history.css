@@ -1,0 +1,381 @@
+/* History page — runs inside the app-shell layout */
+.history-page .scroll-area {
+  background: var(--bg);
+}
+
+
+
+.clear-btn {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #ef4444;
+  padding: 0.5rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.clear-btn:hover { background: #fee2e2; }
+
+.hist-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.hist-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Overview Grid ──────────────────────────── */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.ov-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  transition: all 0.3s;
+}
+.ov-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.04); border-color: var(--primary); }
+
+.ov-num {
+  display: block;
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--primary);
+}
+
+.correct-card .ov-num { color: var(--emerald); }
+.wrong-card .ov-num { color: var(--red); }
+.streak-card .ov-num { font-size: 1.8rem; color: var(--amber); }
+
+.ov-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.5rem;
+}
+
+/* ── Topic Map ──────────────────────────────── */
+.topic-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.topic-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.topic-tile.strong { border-left: 4px solid var(--emerald); }
+.topic-tile.medium { border-left: 4px solid var(--amber); }
+.topic-tile.weak   { border-left: 4px solid var(--red); }
+
+.tt-subject {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.tt-topic {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.8rem;
+}
+
+.tt-bar {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.tt-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.topic-tile.strong .tt-fill { background: var(--emerald); }
+.topic-tile.medium .tt-fill { background: var(--amber); }
+.topic-tile.weak .tt-fill   { background: var(--red); }
+
+.tt-pct {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Session Cards ──────────────────────────── */
+.session-list { display: flex; flex-direction: column; gap: 1rem; }
+
+.session-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.sc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+
+.sc-meta { display: flex; gap: 1rem; align-items: center; }
+.sc-subject { font-weight: 800; font-size: 1.1rem; color: var(--text); }
+.sc-exam { font-size: 0.75rem; font-weight: 700; background: #eef2ff; color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 6px; }
+.sc-date { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+
+.sc-score { font-size: 1.6rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.sc-score.good { color: var(--emerald); }
+.sc-score.ok   { color: var(--amber); }
+.sc-score.low  { color: var(--red); }
+
+.sc-stats { display: flex; gap: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.sc-stat { font-size: 0.9rem; font-weight: 600; }
+.sc-stat.correct { color: var(--emerald); }
+.sc-stat.wrong { color: var(--red); }
+.sc-stat.skip { color: var(--text-muted); }
+
+.sc-topic { font-size: 0.85rem; font-weight: 600; color: var(--primary); margin-top: 0.5rem; }
+
+/* ── Empty State ────────────────────────────── */
+.empty-state { text-align: center; padding: 4rem 2rem; }
+.empty-icon { font-size: 3.5rem; margin-bottom: 1.25rem; }
+.empty-state h3 { font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 0.4rem; }
+.empty-state p  { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+
+.empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: var(--primary);
+  color: #fff;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+}
+.empty-cta:hover { background: var(--primary-h); transform: translateY(-2px); }
+
+/* ── Session Filters (was missing) ──────────── */
+.session-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.sf-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 0.4rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+}
+
+.sf-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.sf-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.2);
+}
+
+/* ── Back button override (style.css uses dark bg) ── */
+.history-page .back-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+  font-size: 0.88rem;
+  font-family: 'Outfit', sans-serif;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.history-page .back-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* ── glass-card sections ── */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+
+/* ══ CUSTOM ADAPTIVE SCROLLBARS ════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ══ DARK THEME OVERRIDES ══════════════════════════════ */
+[data-theme="dark"] .glass-card {
+  background: rgba(17, 24, 39, 0.7);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .ov-card, 
+[data-theme="dark"] .topic-tile, 
+[data-theme="dark"] .session-card {
+  background: rgba(31, 41, 55, 0.45);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+[data-theme="dark"] .sc-exam {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary);
+}
+
+[data-theme="dark"] .sc-stats {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .tt-bar {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .sf-btn {
+  background: rgba(31, 41, 55, 0.45);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .sf-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+[data-theme="dark"] .sf-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+[data-theme="dark"] .action-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text) !important;
+}
+[data-theme="dark"] .action-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] .history-page .back-btn {
+  background: rgba(31, 41, 55, 0.45);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .history-page .back-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+[data-theme="dark"] .clear-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+[data-theme="dark"] .clear-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+/* ══ MICRO-ANIMATIONS & TRANSITIONS ══════════════════ */
+.ov-card, .topic-tile, .session-card, .sf-btn, .action-btn, .clear-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ov-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+[data-theme="dark"] .ov-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.topic-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.04);
+}
+[data-theme="dark"] .topic-tile:hover {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+.session-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.03);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+[data-theme="dark"] .session-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+}
+.action-btn:active {
+  transform: translateY(0);
+}
+
+

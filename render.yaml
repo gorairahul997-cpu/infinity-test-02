@@ -1,0 +1,28 @@
+# Render Blueprint Specification (render.yaml)
+# To deploy using this blueprint, go to: https://dashboard.render.com/blueprints
+services:
+  - type: web
+    name: infinity-practice
+    env: docker
+    plan: free # Change to "starter" (paid) if you want to attach a persistent disk for SQLite
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NVIDIA_API_KEY
+        sync: false # You will be prompted to enter this in the Render dashboard during deployment
+      - key: NVIDIA_FAST_MODEL
+        value: meta/llama-3.1-8b-instruct
+      - key: NVIDIA_HEAVY_MODEL
+        value: meta/llama-3.1-70b-instruct
+      - key: NVIDIA_CHAT_MODEL
+        value: meta/llama-3.1-8b-instruct
+      
+      # UNCOMMENT below if you choose a paid plan (starter) and want to attach a persistent disk for SQLite
+      # - key: DATABASE_PATH
+      #   value: /data/practice.db
+
+    # UNCOMMENT below if you choose a paid plan (starter) and want to attach a persistent disk for SQLite
+    # disk:
+    #   name: practice-data
+    #   mountPath: /data
+    #   sizeGB: 1

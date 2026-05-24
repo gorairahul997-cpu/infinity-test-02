@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Your practice session results — Infinity Practice" />
+  <title>Results | Infinity Practice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app-shell.css" />
+  <link rel="stylesheet" href="css/results.css" />
+  <!-- KaTeX for formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    (function () {
+      function patchKatex() {
+        if (!window.katex) return;
+        const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+        const useKatex = prefs.useKatex !== false;
+
+        // Save original functions if not already done
+        if (!window.__orig_renderMathInElement && window.renderMathInElement) {
+          window.__orig_renderMathInElement = window.renderMathInElement;
+        }
+        if (window.katex && !window.katex.__orig_renderToString && window.katex.renderToString) {
+          window.katex.__orig_renderToString = window.katex.renderToString;
+        }
+
+        // Monkeypatch renderMathInElement
+        window.renderMathInElement = function (element, options) {
+          const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+          if (currentPrefs.useKatex === false) return; // Do nothing if disabled
+
+          const opt = options || {};
+          opt.throwOnError = false;
+          opt.errorColor = 'currentColor'; // Hide red error markup
+          
+          try {
+            if (window.__orig_renderMathInElement) {
+              window.__orig_renderMathInElement(element, opt);
+            }
+          } catch (e) {
+            console.warn('Intercepted renderMathInElement error:', e);
+          }
+        };
+
+        // Monkeypatch katex.renderToString
+        if (window.katex) {
+          window.katex.renderToString = function (tex, options) {
+            const currentPrefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+            const opt = options || {};
+            if (currentPrefs.useKatex === false) {
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-raw-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            
+            // Force throwOnError = true so we can catch any parsing/syntax errors.
+            const forceThrowOpt = { ...opt, throwOnError: true };
+            
+            try {
+              if (window.katex.__orig_renderToString) {
+                return window.katex.__orig_renderToString(tex, forceThrowOpt);
+              }
+            } catch (e) {
+              console.warn('Intercepted renderToString error:', e, 'for formula:', tex);
+              if (opt.throwOnError === true) {
+                throw e; // Propagate if the caller explicitly requested it
+              }
+              // Escape math text to prevent HTML injection and return raw math in current text color
+              const escapedTex = tex
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              return opt.displayMode 
+                ? `<div class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap; margin: 1rem 0; text-align: center;">$$${escapedTex}$$</div>` 
+                : `<span class="katex-error-fallback" style="font-family: monospace; white-space: pre-wrap;">$${escapedTex}$</span>`;
+            }
+            return tex;
+          };
+        }
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', patchKatex);
+      } else {
+        patchKatex();
+      }
+    })();
+  </script>
+  <!-- ⚡ Blocking: apply theme + performance mode BEFORE first paint -->
+  <script>
+    (function () {
+      const prefs = JSON.parse(localStorage.getItem('infinityPrefs') || '{}');
+      const isLowEnd = (navigator.hardwareConcurrency || 4) <= 2;
+      if (prefs.performanceMode || isLowEnd) {
+        document.documentElement.classList.add('low-end');
+      }
+      if (localStorage.getItem('infinityTheme') === 'dark')
+        document.documentElement.setAttribute('data-theme', 'dark');
+    })();
+  </script>
+</head>
+<body class="app-body results-page page-entry">
+
+<div class="app-layout">
+
+  <!-- ══ Sidebar Nav ═══════════════════════════════════════════ -->
+  <nav class="app-nav">
+    <div class="nav-brand">
+      <span class="brand-icon">∞</span>
+      <span class="brand-text">Infinity</span>
+    </div>
+
+    <div class="nav-menu">
+      <a href="index.html" class="nav-item">
+        <span class="nav-icon">🚀</span>
+        <span class="nav-label">Practice</span>
+      </a>
+      <a href="index.html?tab=pdf" class="nav-item">
+        <span class="nav-icon">📄</span>
+        <span class="nav-label">PDF Studio</span>
+      </a>
+      <a href="index.html?tab=history" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">History</span>
+      </a>
+      <a href="index.html?tab=formulas" class="nav-item">
+        <span class="nav-icon">📐</span>
+        <span class="nav-label">Formula Engine</span>
+      </a>
+      <a href="index.html?tab=settings" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </div>
+
+    <div class="nav-status">
+      <span class="status-dot online"></span>
+      <span>AI Ready</span>
+    </div>
+  </nav>
+
+  <!-- ══ Main Content ══════════════════════════════════════ -->
+  <main class="app-main">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+      <div class="m-brand">∞ Infinity</div>
+      <div><span class="status-dot online"></span></div>
+    </header>
+
+    <div class="scroll-area">
+
+      <!-- Page Header -->
+      <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
+        <div>
+          <h1 class="page-title">Session Results</h1>
+          <p class="page-subtitle">Your performance breakdown.</p>
+        </div>
+        <div class="results-meta" id="results-meta"></div>
+      </div>
+
+      <div class="results-main-content" style="max-width: 820px; display:flex; flex-direction:column; gap:1.5rem;">
+
+  <!-- ── Score Hero ───────────────────────────────────────────────────── -->
+  <section class="score-hero glass-card">
+    <div class="score-ring-wrap">
+      <svg viewBox="0 0 160 160" class="score-ring-svg">
+        <circle cx="80" cy="80" r="68" class="sr-bg"/>
+        <circle cx="80" cy="80" r="68" class="sr-fill" id="sr-fill"/>
+      </svg>
+      <div class="sr-inner">
+        <span class="sr-pct" id="sr-pct">0%</span>
+        <span class="sr-label">Accuracy</span>
+      </div>
+    </div>
+    <div class="score-details">
+      <h2 class="score-grade" id="score-grade">–</h2>
+      <p class="score-msg" id="score-msg">Loading results...</p>
+      <div class="score-chips">
+        <div class="chip chip-green"><span id="r-correct">0</span> Correct</div>
+        <div class="chip chip-red"><span id="r-wrong">0</span> Wrong</div>
+        <div class="chip chip-gray"><span id="r-skipped">0</span> Skipped</div>
+        <div class="chip chip-orange">🔥 <span id="r-streak">0</span> Best Streak</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Topic Performance ────────────────────────────────────────────── -->
+  <section class="topic-section glass-card">
+    <h2 class="section-heading">📊 Topic-wise Performance</h2>
+    <div class="topic-bars" id="topic-bars"></div>
+  </section>
+
+  <!-- ── Question Review ───────────────────────────────────────────────── -->
+  <section class="review-section glass-card">
+    <h2 class="section-heading">🔍 Question Review</h2>
+    <div class="review-filters">
+      <button class="rf-btn active" data-filter="all" onclick="filterReview(this)">All</button>
+      <button class="rf-btn" data-filter="correct" onclick="filterReview(this)">✅ Correct</button>
+      <button class="rf-btn" data-filter="wrong" onclick="filterReview(this)">❌ Wrong</button>
+      <button class="rf-btn" data-filter="skipped" onclick="filterReview(this)">⏭ Skipped</button>
+    </div>
+    <div class="review-list" id="review-list"></div>
+  </section>
+
+  <!-- ── CTA ──────────────────────────────────────────────────────────── -->
+  <section class="cta-section" style="display:flex; flex-direction:column; gap:0.75rem;">
+    <button class="cta-btn primary" onclick="retakeExactPaper()">🎯 Retake Exact Paper</button>
+    <button class="cta-btn secondary" onclick="practiceAgain()">🔄 Generate Similar (Same Settings)</button>
+    <a href="index.html" class="cta-btn secondary" style="background:transparent; border:1px solid var(--border);">⚙️ Change Settings</a>
+  </section>
+      </div><!-- end results-main-content -->
+    </div><!-- end scroll-area -->
+  </main>
+</div><!-- end app-layout -->
+
+<script src="js/results.js"></script>
+<script>
+  (function () {
+    const isLowEnd = document.documentElement.classList.contains('low-end');
+
+    /* ── Page entrance animation ── */
+    if (!isLowEnd) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          document.body.classList.add('page-loaded');
+        });
+      });
+    } else {
+      document.body.classList.add('page-loaded');
+    }
+
+    /* ── Page exit animation on nav clicks ── */
+    document.querySelectorAll('.nav-item').forEach(function (link) {
+      link.addEventListener('click', function (e) {
+        const href = link.getAttribute('href');
+        if (!href || href === '#') return;
+        if (isLowEnd) return;
+
+        e.preventDefault();
+        document.body.classList.remove('page-loaded');
+        setTimeout(function () { window.location.href = href; }, 220);
+      });
+    });
+  })();
+</script>
+</body>
+</html>
